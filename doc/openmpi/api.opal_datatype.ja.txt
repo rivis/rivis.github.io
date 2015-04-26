@@ -1,0 +1,762 @@
+################################################################
+``opal_datatype_t`` (OPALのdatatype)
+################################################################
+
+.. style: docutils-report
+
+2014年11月ごろの `Open MPI <http://www.open-mpi.org/>`_ の
+``opal_datatype_t`` 関連のソースを読んだときのメモ。
+
+.. contents::
+
+概要
+================================================================
+
+Open MPIでは、MPI StandardのdatatypeをOPALとOMPIの2段階で扱う。
+
+OPALでは、MPI Standardのdatatypeを表現・作成するのに必要な基本的な
+構造・処理と、プラットフォーム・プログラミング言語に依存しない
+基本的なdatatypeを提供する。
+
+OPALでは、datatypeは構造体 ``opal_datatype_t`` のオブジェクトとして
+表現される。type mapは ``opal_datatype_t::desc`` に格納され、
+LB, UBなどは ``opal_datatype_t::true_lb``, ``opal_datatype_t::true_ub``,
+``opal_datatype_t::lb``, ``opal_datatype_t::ub`` に格納される。
+
+OPALに定義されるdatatypeは、 ``opal_datatype_loop``, ``opal_datatype_lb``
+などの制御用のdatatypeと、 ``opal_datatype_int4``, ``opal_datatype_uint8``,
+``opal_datatype_float8``, ``opal_datatype_bool`` などの、プラットフォームや
+プログラミング言語に依存しないデータ用のdatatypeのみである。
+
+マクロ
+================================================================
+
+``OPAL_DATATYPE_FLAG_*``
+----------------------------------------------------------------
+
+``opal_datatype_t::flags`` と ``ddt_elem_id_description::flags`` に
+設定されるフラグ。
+
+``OPAL_DATATYPE_FLAG_UNAVAILABLE``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    datatypes unavailable on the build (OS or compiler dependant)
+
+例えば、Open MPIをFortranサポート無しで構築した場合は、
+``ompi_mpi_integer`` (``MPI_INTEGER``) に、このフラグが設定される。
+
+``OPAL_DATATYPE_FLAG_PREDEFINED``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    cannot be removed: initial and predefined datatypes
+
+OPALのpredefined datatypeに、このフラグが設定される。
+
+``MPI_2INT`` などの、MPI Standardで定義されているがbasic datatypeでは
+ないpredefined datatypeには、このフラグは設定されない。
+
+``OPAL_DATATYPE_FLAG_COMMITED``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    ready to be used for a send/recv operation
+
+predefined datatypeと ``opal_datatype_commit`` (``ompi_datatype_commit``,
+``MPI_Type_commit``)が呼ばれたdatatypeに、このフラグが設定される。
+
+``OPAL_DATATYPE_FLAG_OVERLAP``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    datatype is unpropper for a recv operation
+
+``OPAL_DATATYPE_FLAG_CONTIGUOUS``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    contiguous datatype
+
+type map通りにbasic datatypeをメモリ上に配置したときにそれらのデータが
+隙間無く連続に並ぶ場合に、このフラグが設定される。ただし、LBとUBは無視する。
+
+例えば、以下のtype mapのdatatypeでは、このフラグが設定される。::
+
+  { (uint32_t, 0), (uint16_t, 4), (uint8_t, 6) }
+
+以下のtype mapのdatatypeのように、隙間はないが順番通りでないdatatypeでは、
+このフラグは設定されない。::
+
+  { (uint16_t, 4), (uint8_t, 6), (uint32_t, 0) }
+
+``OPAL_DATATYPE_FLAG_NO_GAPS``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    no gaps around the datatype, aka OPAL\_DATATYPE\_FLAG\_CONTIGUOUS
+    and extent == size
+
+フラグ ``OPAL_DATATYPE_FLAG_CONTIGUOUS`` が設定され、かつ、
+extentとsizeが等しいdatatypeに、このフラグが設定される。
+つまり、このdatatypeのデータを複数個並べたときにそれらのデータが
+隙間無く連続に並ぶ場合に、このフラグが設定される。
+
+例えば、以下のtype mapのdatatypeでは、データが隙間無く連続に並び、
+extentもsizeも8なので、このフラグが設定される。::
+
+  { (uint32_t, 0), (uint16_t, 4), (uint8_t, 6), (uint8_t, 7) }
+
+しかし、以下のtype mapのdatatypeでは、 ``uint32_t`` のalignementが
+4なので ``uint8_t`` の後に1バイトの空白が入ってextentが8になるが、
+sizeは7なので、このフラグは設定されない。::
+
+  { (uint32_t, 0), (uint16_t, 4), (uint8_t, 6) }
+
+``OPAL_DATATYPE_FLAG_USER_LB``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    has a user defined LB
+
+ユーザが ``opal_datatype_lb`` (``ompi_mpi_lb``, ``MPI_LB``) を使用して
+LBを設定したdatatypeに、このフラグが設定される。
+ユーザが設定したLBがtrue LBと同じであっても、このフラグが設定される。
+
+``opal_datatype_resize`` (``ompi_datatype_create_resized``,
+``MPI_Type_create_resized``)関数だけを使用してLBを設定したdatatypeには、
+このフラグは設定されない。
+
+``opal_datatype_lb`` (``ompi_mpi_lb``)自体にはこのフラグは設定されない。
+
+``OPAL_DATATYPE_FLAG_USER_UB``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    has a user defined UB
+
+ユーザが ``opal_datatype_ub`` (``ompi_mpi_ub``, ``MPI_UB``) を使用して
+UBを設定したdatatypeに、このフラグが設定される。
+ユーザが設定したUBがtrue UBと同じであっても、このフラグが設定される。
+
+``opal_datatype_resize`` (``ompi_datatype_create_resized``,
+``MPI_Type_create_resized``)関数だけを使用してUBを設定したdatatypeには、
+このフラグは設定されない。
+
+``opal_datatype_ub`` (``ompi_mpi_ub``)自体にはこのフラグは設定されない。
+
+``OPAL_DATATYPE_FLAG_DATA``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    data or control structure
+
+``opal_datatype_int4`` などのデータを表すbasic datatypeおよび
+それらを含むderived datatypeにはこのフラグが設定される。
+
+``opal_datatype_loop``, ``opal_datatype_end_loop``, ``opal_datatype_lb``,
+``opal_datatype_ub`` といった制御を表すdatatypeや、 ``opal_datatype_empty``,
+``opal_datatype_unavailable`` などのtype mapが空のdatatypeには、
+このフラグは設定されない。
+
+``OPAL_DATATYPE_FLAG_BASIC``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+    (OPAL_DATATYPE_FLAG_PREDEFINED |
+     OPAL_DATATYPE_FLAG_CONTIGUOUS |
+     OPAL_DATATYPE_FLAG_NO_GAPS |
+     OPAL_DATATYPE_FLAG_DATA |
+     OPAL_DATATYPE_FLAG_COMMITED)
+
+構造体・共用体
+================================================================
+
+``opal_datatype_t`` (``struct``)
+----------------------------------------------------------------
+
+OPALのdatatype。
+
+``super`` (``opal_object_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    basic superclass
+
+``flags`` (``uint16_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    the flags
+
+``OPAL_DATATYPE_FLAG_*`` と ``OMPI_DATATYPE_FLAG_*`` の論理和。
+
+``id`` (``uint16_t``)
+^^^^^^^^^^^^^^^^^^^^^
+
+    data id, normally the index in the data array
+
+datatypeのOPALでのID。
+
+datatypeに応じて、IDが以下のように割り振られる。
+
+OPALの制御用のpredefined datatype (``opal_datatype_lb`` など)
+  ``opal/datatype/opal_datatype_internal.h`` に定義された
+  ``OPAL_DATATYPE_LB`` などの ``OPAL_DATATYPE_*``  。
+
+OPALのデータ用のpredefined datatype (``opal_datatype_int4`` など)
+  ``opal/datatype/opal_datatype_internal.h`` に定義された
+  ``OPAL_DATATYPE_INT4`` などの ``OPAL_DATATYPE_*``  。
+
+対応するOPALのdatatypeが存在するOMPIのpredefined datatype (``ompi_mpi_int`` など)
+  対応するOPALのdatatypeのID。
+
+対応するOPALのdatatypeが存在しないOMPIのpredefined datatype (``ompi_mpi_2int`` など)
+  ``ompi/datatype/ompi_datatype_internal.h`` に定義された
+  ``OMPI_DATATYPE_2INT`` などの ``OMPI_DATATYPE_*``
+  (``OMPI_DATATYPE_MPI_2INT`` などの ``MPI_`` が付かない方)。
+
+OMPIの使用できないdatatype (Open MPIをFortranサポート無しで構築した場合の ``ompi_mpi_integer`` など)
+  ``OPAL_DATATYPE_UNAVAILABLE`` 。
+
+``opal_datatype_clone`` (``ompi_datatype_duplicate``, ``MPI_TYPE_DUP``)で複製されたderived datatype
+  複製元のdatatypeのID。
+
+それ以外のderived datatype
+  0。
+
+上記の通り、対応するOPALのdatatypeが存在するOMPIのpredefined datatypeでは、複数のdatatypeが同一の
+``id`` の値を持つことがある。たとえば、C言語の ``int`` やFortranの
+``integer`` が4バイトの場合は、以下のdatatypeはすべて ``id`` の値が
+``OPAL_DATATYPE_INT4`` になる。
+
+- ``opal_datatype_int4``
+- ``ompi_mpi_int``
+- ``ompi_mpi_int32_t``
+- ``ompi_mpi_integer``
+- ``ompi_mpi_integer4``
+
+``bdt_used`` (``uint32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    bitset of which basic datatypes are used in the data description
+
+``size`` (``size_t``)
+^^^^^^^^^^^^^^^^^^^^^
+
+    total size in bytes of the memory used by the data if the data is
+    put on a contiguous buffer
+
+``true_lb`` (``OPAL_PTRDIFF_TYPE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    the true lb of the data without user defined lb and ub
+
+``true_ub`` (``OPAL_PTRDIFF_TYPE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    the true ub of the data without user defined lb and ub
+
+``lb`` (``OPAL_PTRDIFF_TYPE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    lower bound in memory
+
+``ub`` (``OPAL_PTRDIFF_TYPE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    upper bound in memory
+
+``nbElems`` (``size_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    total number of elements inside the datatype
+
+``align`` (``uint32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    data should be aligned to
+
+``name`` (``char[OPAL_MAX_OBJECT_NAME]``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    name of the datatype
+
+``desc`` (``dt_type_desc_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    the data description
+
+type mapを表現する情報。平坦なtype mapではなく、繰り返しを階層的に用いて
+type mapを表現する。
+
+LB, UBの情報は持たず、 ``MPI_TYPE_CREATE_RESIZED`` の影響を受けない。
+
+``opt_desc`` (``dt_type_desc_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    short description of the data used when conversion is useless or in
+    the send case (without conversion)
+
+``desc`` に対して、以下の最適化を行ったもの。
+
+- type signature上で連続する2つ以上のデータが、メモリ上で連続する場合は、
+  それらを1つの ``ddt_elem_desc_t`` にまとめる。それらのdatatype (OPAL
+  のbasic datatype)が同一でない場合は、 ``OPAL_DATATYPE_UINT1``
+  に変換する。これにより、繰り返しの階層が減る。
+- ``ddt_loop_desc_t`` と ``ddt_endloop_desc_t`` による繰り返しが
+  2回以下であり、繰り返しの内容がbasic datatype 1個の場合は、
+  ``ddt_loop_desc_t`` と ``ddt_endloop_desc_t`` を削除し、繰り返しの
+  内容を上位の階層に展開する。これにより、繰り返しの階層が減る。このとき、
+  basic datatypeが ``OPAL_DATATYPE_UINT1`` に変換されることがある。
+
+例えば、以下のように作成した、 ``OPAL_DATATYPE_UINT8`` が1個、
+``OPAL_DATATYPE_UINT4`` が1個と ``OPAL_DATATYPE_UINT2`` が2個の繰り返しが
+2回、後ろに2バイトの隙間のある ``OPAL_DATATYPE_UINT2`` の繰り返しが3回の、
+derived datatypeを考える。::
+
+    int blengths1[3] = {1, 1, 1};
+    MPI_Aint disps1[3] = {0, 4, 6};
+    MPI_Datatype dtypes1[3] = {MPI_UINT32_T, MPI_UINT16_T, MPI_UINT16_T};
+
+    int blengths3[3] = {1, 2, 3};
+    MPI_Aint disps3[3] = {0, 8, 24};
+    MPI_Datatype dtypes3[3];
+
+    MPI_Type_create_struct(3, blengths1, disps1, dtypes1, &dt1);
+    MPI_Type_create_resized(MPI_UINT16_T, 0, 4, &dt2);
+    dtypes3[0] = MPI_UINT64_T;
+    dtypes3[1] = dt1;
+    dtypes3[2] = dt2;
+    MPI_Type_create_struct(3, blengths3, disps3, dtypes3, &dt);
+    MPI_Type_commit(&dt);
+
+これを図で現すと以下である。 ``■`` はデータ1バイト、 ``□`` は隙間
+1バイトを示す。::
+
+    ■■■■■■■■ ■■■■ ■■ ■■ ■■■■ ■■ ■■ ■■□□ ■■□□ ■■□□
+
+このderived datatypeでは、 ``desc`` は、以下の配列で構成される。::
+
+    elem    { .type = OPAL_DATATYPE_UINT8, .count =  1, .disp =  0, .extent = 8 }
+    loop    { .loops = 2, .extent = 8 }
+    elem    { .type = OPAL_DATATYPE_UINT4, .count =  1, .disp =  8, .extent = 4 }
+    elem    { .type = OPAL_DATATYPE_UINT2, .count =  2, .disp = 12, .extent = 2 }
+    endloop
+    loop    { .loops = 3, extent = 4 }
+    elem    { .type = OPAL_DATATYPE_UINT2, .count =  1, .extent = 2, .disp = 24 }
+    endloop
+    endloop
+
+``opt_desc`` では、最初の ``ddt_loop_desc_t`` は直前の
+``OPAL_DATATYPE_UINT8`` と連続なのでまとめられ、さらに2つめの
+``ddt_loop_desc_t`` の最初の ``OPAL_DATATYPE_UINT2`` も連続なので
+まとめられ、2つめの ``ddt_loop_desc_t`` の残りの2つの ``OPAL_DATATYPE_UINT2``
+は上位の階層に2個ずつの ``OPAL_DATATYPE_UINT1`` として展開され、その結果、
+以下の配列で構成される。::
+
+    elem    { .type = OPAL_DATATYPE_UINT1, count = 26, disp =  0, extent = 1 }
+    elem    { .type = OPAL_DATATYPE_UINT1, count =  2, disp = 28, extent = 1 }
+    elem    { .type = OPAL_DATATYPE_UINT1, count =  2, disp = 32, extent = 1 }
+    endloop
+
+``btypes`` (``uint32_t[OPAL_DATATYPE_MAX_SUPPORTED]``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    basic elements count used to compute the size of the datatype for
+    remote nodes. The length of the array is dependent on the maximum
+    number of datatypes of all top layers. Reason being is that Fortran
+    is not at the OPAL layer.
+
+``dt_type_desc_t`` (``struct``)
+----------------------------------------------------------------
+
+``length`` (``opal_datatype_count_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    the maximum number of elements in the description array
+
+``desc`` 配列の、メモリを確保した要素の数。
+
+basic datatypeでは値が1になる。
+
+``used`` (``opal_datatype_count_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    the number of used elements in the description array
+
+``desc`` 配列の、意味のある要素の数。commitされたdatatypeの ``desc`` の
+最後の ``ddt_endloop_desc_t`` は含まない。
+
+basic datatypeでは値が1になる。
+
+``desc`` (``dt_elem_desc_t *``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``dt_elem_desc_t`` 共用体の配列へのポインタ。
+
+basic datatypeでは、 ``opal_datatype_predefined_elem_desc`` 配列の要素を
+指し、その要素には以下が設定される。::
+
+    .elem.common.flags = OPAL_DATATYPE_FLAG_PREDEFINED |
+                         OPAL_DATATYPE_FLAG_DATA |
+                         OPAL_DATATYPE_FLAG_CONTIGUOUS |
+                         OPAL_DATATYPE_FLAG_NO_GAPS;
+    .elem.common.type  = datatype->id;
+    .elem.count        = 1;
+    .elem.disp         = 0;
+    .elem.extent       = datatype->size;
+
+``dt_elem_desc_t`` 共用体の配列は、EBNF (Extended Backus-Naur Form)で
+表現すると、commitされていないdatatypeは以下の ``uncommitted-desc`` で、
+commitされたdatatypeは以下の ``committed-desc`` で、現される。
+なお、EBNFでは、 ``{`` と ``}`` で囲まれた部分は0回以上の繰り返し、
+``(`` と ``)`` で囲まれた部分はグループ化、 ``|`` は選択を示す。::
+
+    elements         = "ddt_elem_desc_t" , { "ddt_elem_desc_t" } ;
+    loop             = "ddt_loop_desc_t" , ( elememts | loop ) , { elememts | loop } , "ddt_endloop_desc_t" ;
+    uncommitted-desc = elements | loop ;
+    committed-desc   = uncommitted-desc , "ddt_endloop_desc_t" ;
+
+この配列に ``OPAL_DATATYPE_LB`` と ``OPAL_DATATYPE_UB`` に相当する要素は
+含まれない。
+
+``committed-desc`` の最後の要素は ``ddt_endloop_desc_t`` であり、それに
+対応する ``ddt_loop_desc_t`` は存在しない。これは、たとえば ``MPI_Send``
+関数のようにこのdatatypeのデータが複数(``count``)個指定されたときに、
+``committed-desc`` の最初の要素の前に ``ddt_loop_desc_t`` があると
+みなして処理を単純化するためである。
+
+``ddt_elem_id_description`` (``struct``)
+----------------------------------------------------------------
+
+``flags`` (``uint16_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    flags for the record
+
+``OPAL_DATATYPE_FLAG_COMMITED`` 以外の ``OPAL_DATATYPE_FLAG_*`` の論理和。
+
+``type`` (``uint16_t``)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+    the basic data type id
+
+値はOPALのpredefined datatypeのIDである ``OPAL_DATATYPE_*`` 。
+
+``dt_elem_desc_t`` (``union``)
+----------------------------------------------------------------
+
+``elem`` (``ddt_elem_desc_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``loop`` (``ddt_loop_desc_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``end_loop`` (``ddt_endloop_desc_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``ddt_elem_desc_t`` (``struct``)
+----------------------------------------------------------------
+
+datatypeをbasic datatypeに分解したときのbasic datatypeを示す。
+
+``common`` (``ddt_elem_id_description``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    basic data description and flags
+
+``common.type`` はOPALのbasic datatypeのID ``OPAL_DATATYPE_*`` になる。
+
+``common.flags`` はbasic datatype 1個あたりの ``flags`` 。
+
+``count`` (``uint32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    number of blocks
+
+連続するbasic datatypeの個数。
+
+``blocklen`` (``uint32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    number of elements on each block
+
+未使用のフィールド？値は常に 1 。
+
+``extent`` (``OPAL_PTRDIFF_TYPE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    extent of each block (in bytes)
+
+basic datatype 1個あたりのextent。
+
+``disp`` (``OPAL_PTRDIFF_TYPE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    displacement of the first block
+
+最初のblockの、datatype全体の基準位置からのdisplacement。
+
+``ddt_loop_desc_t`` (``struct``)
+----------------------------------------------------------------
+
+datatypeをbasic datatypeに分解したときの繰り返しの開始を示す。
+
+``ddt_endloop_desc_t`` と一対一に対応する。
+
+``common`` (``ddt_elem_id_description``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    basic data description and flags
+
+``common.type`` は ``OPAL_DATATYPE_LOOP`` になる。
+
+``common.flags`` は繰り返し1回あたりの ``flags`` 。
+``OPAL_DATATYPE_FLAG_DATA`` は設定されない。
+
+``loops`` (``uint32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    number of elements
+
+繰り返しの回数。
+
+``items`` (``uint32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    number of items in the loop
+
+対応する ``ddt_endloop_desc_t`` までの間に、対応する ``ddt_endloop_desc_t`` を
+含めていくつの ``dt_elem_desc`` があるか。
+
+``unused`` (``size_t``)
+^^^^^^^^^^^^^^^^^^^^^^^
+
+    not used right now
+
+未使用のフィールド。値は常に -1 。
+
+``extent`` (``OPAL_PTRDIFF_TYPE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    extent of the whole loop
+
+繰り返し1回あたりのextent。つまり、繰り返しの次の回で進めるべきdisplacement。
+
+``ddt_endloop_desc_t`` (``struct``)
+----------------------------------------------------------------
+
+datatypeをbasic datatypeに分解したときの繰り返しの終了を示す。
+
+commitされたdatatypeの最後の ``ddt_endloop_desc_t`` を除き、
+``ddt_loop_desc_t`` と一対一に対応する。
+
+``common`` (``ddt_elem_id_description``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    basic data description and flags
+
+``common.type`` は ``OPAL_DATATYPE_END_LOOP`` になる。
+
+``common.flags`` は対応する ``ddt_loop_desc_t`` の ``common.flags`` と
+同じ値。
+
+``items`` (``uint32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+    number of elements
+
+対応する ``ddt_loop_desc_t`` の ``loops`` と同じ値。
+
+``unused`` (``uint32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    not used right now
+
+未使用のフィールド。値は常に -1 。
+
+``size`` (``size_t``)
+^^^^^^^^^^^^^^^^^^^^^
+
+    real size of the data in the loop
+
+繰り返し1回あたりのデータがメモリ上で占めるサイズ。
+
+``first_elem_disp`` (``OPAL_PTRDIFF_TYPE``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    the displacement of the first block in the loop
+
+繰り返しに含まれる最初のblockの、datatype全体の基準位置からのdisplacement。
+
+関数
+================================================================
+
+``opal_datatype_create``
+----------------------------------------------------------------
+
+新しいdatatypeのオブジェクトを作成する。
+
+``expectedSize`` (``int32_t``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``opal_datatype_t::desc.used`` に期待される値。
+
+return ``opal_datatype_t *``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+新しいdatatypeのオブジェクトへのポインタ。
+
+``opal_datatype_add``
+----------------------------------------------------------------
+
+既存のdatatype ``pdtBase`` に別の既存のdatatype ``pdtAdd`` を ``count`` 個
+追加する。
+
+``pdtAdd`` に ``opal_datatype_t::id`` が ``OPAL_DATATYPE_LB`` または
+``OPAL_DATATYPE_UB`` のdatatype(``opal_datatype_lb``, ``ompi_mpi_lb``
+など)を渡してもよく、その場合は ``opal_datatype_t::lb`` や
+``opal_datatype_t::ub`` が設定される。
+
+``pdtBase`` (``opal_datatype_t *``) [IN/OUT]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+追加先のdatatype。
+
+``pdtAdd`` (``opal_datatype_t *``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+追加するdatatype。
+
+``count`` (``uint32_t``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+追加するdatatypeのデータの個数。
+
+``disp`` (``OPAL_PTRDIFF_TYPE``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+追加するdatatypeの先頭データのdisplacement。
+
+``extent`` (``OPAL_PTRDIFF_TYPE``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+追加するdatatypeのデータのextent。
+
+return (``int32_t``)
+^^^^^^^^^^^^^^^^^^^^
+
+``OPAL_SUCCESS``
+  成功。
+``OPAL_ERROR``
+  エラー。
+
+``opal_datatype_clone``
+----------------------------------------------------------------
+
+datatypeを複製する。
+
+``src_type`` (``opal_datatype_t *``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+複製元のdatatype。
+
+``dest_type`` (``opal_datatype_t *``) [IN/OUT]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+複製先のdatatype。
+
+あらかじめ ``ompi_datatype_create`` 関数で作成しておく必要がある。
+
+以下のように複製される。
+
+- ``opal_datatype_t::id`` は複製元と同じになる。
+- ``opal_datatype_t::flag`` から ``OPAL_DATATYPE_FLAG_PREDEFINED`` フラグは
+  落とされる。
+- ``opal_datatype_t::desc.desc`` は配列が複製される。
+- ``opal_datatype_t::opt_desc.desc`` はメモリが新規に確保されて配列が
+  複製される。
+
+return (``int32_t``)
+^^^^^^^^^^^^^^^^^^^^
+
+``OPAL_SUCCESS``
+  成功。
+
+``opal_datatype_resize``
+----------------------------------------------------------------
+
+datatypeのLBとUBを変更する。
+
+``type`` (``opal_datatype_t *``) [IN/OUT]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+datatype。
+
+``lb`` (``OPAL_PTRDIFF_TYPE``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+LB。
+
+``extent`` ``OPAL_PTRDIFF_TYPE`` [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+extent。
+
+return (``int32_t``)
+^^^^^^^^^^^^^^^^^^^^
+
+``OPAL_SUCCESS``
+  成功。
+
+``opal_datatype_commit``
+----------------------------------------------------------------
+
+datatypeをcommitする。
+
+具体的には以下を行う。
+
+- ``opal_datatype_t::flags`` に ``OPAL_DATATYPE_FLAG_COMMITED`` フラグを
+  設定する。
+- ``opal_datatype_t::desc.desc`` 配列の最後の要素(``ddt_endloop_desc_t``)の
+  各フィールドを設定する。
+- ``opal_datatype_t::opt_desc`` を設定する。
+
+``pData`` (``opal_datatype_t *``) [IN/OUT]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+commitするdatatype。
+
+return (``int32_t``)
+^^^^^^^^^^^^^^^^^^^^
+
+``OPAL_SUCCESS``
+  commit完了。
+
+``opal_datatype_copy_content_same_ddt``
+----------------------------------------------------------------
+
+複写元メモリ領域 ``source_base`` にあるdatatype ``datatype`` の
+個数 ``count`` のデータを、複写先メモリ領域 ``destination_base`` に
+同じdatatypeで複写する。
+
+複写元メモリ領域と複写先メモリ領域には重なり(overlap)が合ってもよい。
+
+``datatype`` (``opal_datatype_t *``) [IN/OUT]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+複写元と複写先のdatatype。
+
+``count`` (``int32_t``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+データの個数。
+
+``destination_base`` (``char *``) [OUT]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+複写先メモリ領域の開始アドレス。
+
+``source_base`` (``char *``) [IN]
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+複写元メモリ領域の開始アドレス。
+
+return (``int32_t``)
+^^^^^^^^^^^^^^^^^^^^
+
+0
+  複写完了。
+1
+  ``count`` が0のため複写不要。

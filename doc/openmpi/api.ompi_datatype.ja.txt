@@ -1,0 +1,151 @@
+################################################################
+``ompi_datatype_t`` (OMPIのdatatype)
+################################################################
+
+.. style: docutils-report
+
+2014年11月ごろの `Open MPI <http://www.open-mpi.org/>`_ の
+``ompi_datatype_t`` 関連のソースを読んだときのメモ。
+
+.. contents::
+
+概要
+================================================================
+
+マクロ
+================================================================
+
+``OMPI_DATATYPE_FLAG_*``
+----------------------------------------------------------------
+
+``OMPI_DATATYPE_FLAG_PREDEFINED``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Is the datatype predefined as MPI type (not necessarily as OPAL
+    type, e.g. struct/block types)
+
+OMPIのpredefined datatypeに、このフラグが設定される。
+``MPI_2INT`` などの、MPI Standardで定義されたbasic datatypeではない
+predefined datatypeにも、このフラグが設定される。
+
+``OMPI_DATATYPE_FLAG_DATA_INT``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+整数を示すdatatypeに、このフラグが設定される。
+
+``MPI_BYTE``, ``MPI_AINT``, ``MPI_OFFSET``, ``MPI_COUNT``,
+``MPI_2INT``, ``MPI_SHORT_INT``, ``MPI_LONG_INT``, ``MPI_2INTEGER``
+にも設定される。
+
+``MPI_CHAR``, ``MPI_WCHAR``, ``MPI_PACKED`` には設定されない。
+
+``OMPI_DATATYPE_FLAG_DATA_FLOAT``, ``OMPI_DATATYPE_FLAG_DATA_COMPLEX`` と
+同時に設定されることはない。
+
+``OMPI_DATATYPE_FLAG_DATA_FLOAT``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+浮動小数点を示すdatatypeに、このフラグが設定される。
+
+``MPI_2REAL``, ``MPI_2DOUBLE_PRECISION`` にも設定される。
+
+``OMPI_DATATYPE_FLAG_DATA_INT``, ``OMPI_DATATYPE_FLAG_DATA_COMPLEX`` と
+同時に設定されることはない。
+
+``OMPI_DATATYPE_FLAG_DATA_COMPLEX``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+複素数を示すdatatypeに、このフラグが設定される。
+
+``MPI_2COMPLEX``, ``MPI_2DOUBLE_COMPLEX`` にも設定される。
+
+``OMPI_DATATYPE_FLAG_DATA_INT``, ``OMPI_DATATYPE_FLAG_DATA_FLOAT`` と
+同時に設定されることはない。
+
+``OMPI_DATATYPE_FLAG_DATA_TYPE``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``opal_datatype_t::flags`` から ``OMPI_DATATYPE_FLAG_DATA_INT``,
+``OMPI_DATATYPE_FLAG_DATA_FLOAT``, ``OMPI_DATATYPE_FLAG_DATA_COMPLEX``
+だけを取り出すためのマスク。
+
+``OMPI_DATATYPE_FLAG_DATA_C``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+C言語の型を示すdatatypeに、このフラグが設定される。
+
+``OMPI_DATATYPE_FLAG_DATA_CPP``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+C++の型を示すdatatypeに、このフラグが設定される。
+
+``OMPI_DATATYPE_FLAG_DATA_FORTRAN``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Fortranの型を示すdatatypeに、このフラグが設定される。
+
+``OMPI_DATATYPE_FLAG_DATA_LANGUAGE``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``opal_datatype_t::flags`` から ``OMPI_DATATYPE_FLAG_DATA_C``,
+``OMPI_DATATYPE_FLAG_DATA_CPP``, ``OMPI_DATATYPE_FLAG_DATA_FORTRAN``
+だけを取り出すためのマスク。
+
+構造体・共用体
+================================================================
+
+``ompi_datatype_t`` (struct)
+----------------------------------------------------------------
+
+``super`` (``opal_datatype_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Base opal\_datatype\_t superclass
+
+``id`` (``int32_t``)
+^^^^^^^^^^^^^^^^^^^^
+
+    OMPI-layers unique id of the type
+
+datatypeのOMPIでのID。
+
+``opal_datatype_t::id`` の値とは関係がない。
+
+datatypeに応じて、IDが以下のように割り振られる。
+
+predefined datatype
+  ``OMPI_DATATYPE_MPI_*`` の値。
+
+``MPI_TYPE_DUP`` (``ompi_datatype_duplicate``)で複製されたderived datatype
+  複製元のdatatypeのID。
+
+それ以外のderived datatype
+  既存のものと重複しないよう割り振られた新しいID。
+
+``d_f_to_c_index`` (``int32_t``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Fortran index for this datatype
+
+``d_keyhash`` (``opal_hash_table_t *``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Attribute fields
+
+``args`` (``void *``)
+^^^^^^^^^^^^^^^^^^^^^
+
+    Data description for the user
+
+``packed_description`` (``void *``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Packed description of the datatype
+
+``name`` (``char[MPI_MAX_OBJECT_NAME]``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Externally visible name
+
+関数
+================================================================
