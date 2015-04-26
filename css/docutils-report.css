@@ -1,0 +1,314 @@
+/*
+:Author: KAWASHIMA Takahiro
+:Copyright: This stylesheet has been placed in the public domain.
+:Description: Stylesheet for use with Docutils.
+*/
+
+@import url(docutils-html4css1.css);
+
+/* general */
+
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	color: black;
+	background-color: white;
+	margin: 0;
+	padding: 0;
+	counter-reset: chapter 0;
+}
+@media screen
+{
+	body
+	{
+		padding: 0 1em 2em 1em;
+	}
+}
+
+a.toc-backref
+{
+	color: inherit;
+}
+
+*[onclick] {
+	cursor: pointer;
+}
+
+/* headings */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6
+{
+	font-family: Helvetica, Arial, sans-serif;
+	font-style: normal;
+	font-weight: normal;
+	text-align: left;
+}
+
+h1
+{
+	font-size: 170%;
+	color: white;
+	background-color: black;
+	margin: 1em 0 0.5em 0;
+	padding: 0.2em 0.3em;
+	counter-increment: chapter;
+	counter-reset: section 0 subsection 0;
+}
+
+h1:before
+{
+	content: counter(chapter) " ";
+}
+
+h1.title
+{
+	text-align: center;
+	margin: 0.1em 0;
+	counter-reset: section 0;
+	counter-increment: none;
+}
+
+h1.title:before
+{
+	content: "";
+}
+
+h2
+{
+	font-size: 140%;
+	padding: 0.1em 0.2em;
+	border-width: 0.2em 0 0.2em 0;
+	border-color: black;
+	border-style: solid;
+	counter-increment: section;
+	counter-reset: subsection 0;
+}
+
+h2:before
+{
+	content: counter(chapter) "." counter(section) " ";
+}
+
+h3
+{
+	font-size: 120%;
+	padding: 0.1em 0.2em;
+	border-width: 0 0.2em 0.1em 0;
+	border-color: black;
+	border-style: solid;
+	counter-increment: subsection;
+}
+
+h3:before
+{
+	content: counter(chapter) "." counter(section) "." counter(subsection) " ";
+}
+
+h4
+{
+	font-size: 100%;
+	padding: 0 0 0 0.2em;
+	border-width: 0 0 0 1.2em;
+	border-color: black;
+	border-style: solid;
+}
+
+h5
+{
+	font-weight: bold;
+	font-size: 100%;
+	text-decoration: underline;
+}
+
+h6
+{
+	font-style: italic;
+	font-size: 100%;
+}
+
+h1 tt,
+h2 tt,
+h3 tt,
+h4 tt,
+h5 tt,
+h6 tt
+{
+	background-color: transparent;
+}
+
+/* topic */
+
+div.topic
+{
+	background-color: silver;
+	border-width: 1px;
+	border-style: solid;
+	border-color: black;
+	padding: 8px 8px 0 8px;
+	margin: 10px 0 10px 0;
+}
+
+p.topic-title
+{
+	font-size: 110%;
+	font-weight: bold;
+}
+
+/* body */
+
+p,
+dt,
+dd,
+li
+{
+	line-height: 1.5em;
+}
+
+dt
+{
+	text-decoration: underline;
+}
+
+p
+{
+	margin: 0.7em 0;
+}
+
+li
+{
+	margin: 0.2em 0;
+}
+
+pre {
+	line-height: 1.2em;
+	padding: 10px;
+	margin: 1.5em 0 1.5em 0;
+	border-width: 1px;
+	border-style: solid;
+	border-color: silver;
+}
+
+a
+{
+	text-decoration: none;
+}
+a:hover
+{
+	text-decoration: underline;
+}
+
+tt
+{
+	font-family: monospace;
+	background-color: silver;
+}
+
+div.note
+{
+	background-color: silver;
+	padding: 0.5em;
+	border-width: 1px;
+	border-style: solid
+	border-color: black;
+}
+
+p.admonition-title
+{
+	display: inline;
+}
+
+p.admonition-title:after
+{
+	content: ":";
+}
+
+/* tables */
+
+table.docutils
+{
+	margin: 0.5em 1.5em;
+	padding: 0;
+	border-width: 2px;
+	border-style: solid;
+	border-collapse: collapse;
+}
+
+table.docutils th,
+table.docutils td
+{
+	text-align: left;
+	padding: 0.2em 0.4em;
+	border-width: 2px;
+	border-style: solid;
+	border-color: gray;
+}
+
+th
+{
+	color: white;
+	background-color: black;
+}
+
+/* colors */
+
+@media screen {
+
+	h1
+	{
+		background-color: #33a;
+	}
+
+	h2,
+	h3,
+	h4,
+	h5,
+	h6
+	{
+		background-color: #cdf;
+		border-color: #9af;
+	}
+
+	table.docutils th,
+	table.docutils td
+	{
+		border-color: #9af;
+	}
+
+	th
+	{
+		color: #000;
+		background-color: #cdf;
+	}
+
+	div.topic
+	{
+		background-color: #eef;
+		border-color: #ccc;
+	}
+
+	a
+	{
+		color: #068;
+	}
+ 
+	a:hover
+	{
+		color: #a40;
+	}
+
+	tt
+	{
+		background-color: #eef;
+	}
+
+	div.note
+	{
+		background-color: #eef;
+		border-color: #ccc;
+	}
+
+}
