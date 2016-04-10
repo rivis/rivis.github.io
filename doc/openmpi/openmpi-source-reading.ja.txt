@@ -9,6 +9,15 @@ Open MPIのソース読みのメモ
 
 - API
 
-  * `opal_datatype <./api.opal_datatype.ja.xhtml>`_
-  * `opal_convertor <./api.opal_convertor.ja.xhtml>`_
-  * `ompi_datatype <./api.ompi_datatype.ja.xhtml>`_
+  * Open MPI 2.0
+
+    + `opal_datatype <./api.opal_datatype.ja.xhtml>`_
+    + `opal_convertor <./api.opal_convertor.ja.xhtml>`_
+    + `ompi_datatype <./api.ompi_datatype.ja.xhtml>`_
+
+- クラス図
+
+  * Open MPI 2.0
+
+    + `process <./v2.0/figures/class.proc.svg>`_
+    + `datatype <./v2.0/figures/class.datatype.svg>`_
