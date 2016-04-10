@@ -21,3 +21,9 @@ Open MPIのソース読みのメモ
 
     + `process <./v2.0/figures/class.proc.svg>`_
     + `datatype <./v2.0/figures/class.datatype.svg>`_
+
+- 関数呼び出し順序
+
+  * Open MPI 2.0
+
+    + `MPI_INIT <./v2.0/mpi-init-sequence.txt>`_
