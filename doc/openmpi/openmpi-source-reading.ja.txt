@@ -7,6 +7,8 @@ Open MPIのソース読みのメモ
 `Open MPI <http://www.open-mpi.org/>`_ のソースを読んだときのメモを
 公開しておく。
 
+`英語版 (English version) <./openmpi-source-reading.en.xhtml>`_ もある。
+
 - API
 
   * Open MPI 2.0

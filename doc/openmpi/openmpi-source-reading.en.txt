@@ -7,6 +7,9 @@ Notes on Open MPI Source Reading
 These are my notes on reading source code of
 `Open MPI <http://www.open-mpi.org/>`_.
 
+`Japanese version (日本語版) <./openmpi-source-reading.ja.xhtml>`_
+is also available.
+
 - API
 
   * Open MPI 2.0
