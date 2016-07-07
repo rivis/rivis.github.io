@@ -1,0 +1,29 @@
+################################################################
+Notes on Open MPI Source Reading
+################################################################
+
+.. style: docutils-report
+
+These are my notes on reading source code of
+`Open MPI <http://www.open-mpi.org/>`_.
+
+- API
+
+  * Open MPI 2.0
+
+    + `opal_datatype <./api.opal_datatype.ja.xhtml>`_ (Japanese)
+    + `opal_convertor <./api.opal_convertor.ja.xhtml>`_ (Japanese)
+    + `ompi_datatype <./api.ompi_datatype.ja.xhtml>`_ (Japanese)
+
+- Class Diagrams
+
+  * Open MPI 2.0
+
+    + `process <./v2.0/figures/class.proc.svg>`_
+    + `datatype <./v2.0/figures/class.datatype.svg>`_
+
+- Call sequences of functions
+
+  * Open MPI 2.0
+
+    + `MPI_INIT <./v2.0/mpi-init-sequence.txt>`_
