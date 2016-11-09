@@ -61,7 +61,8 @@ h1
 
 h1:before
 {
-	content: counter(chapter) " ";
+	content: counter(chapter);
+	padding-right: 0.5em;
 }
 
 h1.title
@@ -75,6 +76,7 @@ h1.title
 h1.title:before
 {
 	content: "";
+	padding-right: 0;
 }
 
 h2
@@ -90,7 +92,8 @@ h2
 
 h2:before
 {
-	content: counter(chapter) "." counter(section) " ";
+	content: counter(chapter) "." counter(section);
+	padding-right: 0.5em;
 }
 
 h3
@@ -105,7 +108,8 @@ h3
 
 h3:before
 {
-	content: counter(chapter) "." counter(section) "." counter(subsection) " ";
+	content: counter(chapter) "." counter(section) "." counter(subsection);
+	padding-right: 0.5em;
 }
 
 h4
