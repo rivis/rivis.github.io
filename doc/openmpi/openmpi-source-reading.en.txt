@@ -5,7 +5,7 @@ Notes on Open MPI Source Reading
 .. style: docutils-report
 
 These are my notes on reading source code of
-`Open MPI <http://www.open-mpi.org/>`_.
+`Open MPI <https://www.open-mpi.org/>`_.
 
 `Japanese version (日本語版) <./openmpi-source-reading.ja.xhtml>`_
 is also available.

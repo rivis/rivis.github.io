@@ -4,7 +4,7 @@
 
 .. style: docutils-report
 
-2014年11月ごろの `Open MPI <http://www.open-mpi.org/>`_ の
+2014年11月ごろの `Open MPI <https://www.open-mpi.org/>`_ の
 ``ompi_datatype_t`` 関連のソースを読んだときのメモ。
 
 .. contents::

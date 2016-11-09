@@ -4,7 +4,7 @@ Open MPIのソース読みのメモ
 
 .. style: docutils-report
 
-`Open MPI <http://www.open-mpi.org/>`_ のソースを読んだときのメモを
+`Open MPI <https://www.open-mpi.org/>`_ のソースを読んだときのメモを
 公開しておく。
 
 `英語版 (English version) <./openmpi-source-reading.en.xhtml>`_ もある。
