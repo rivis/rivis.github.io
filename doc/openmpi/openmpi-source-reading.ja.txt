@@ -29,3 +29,9 @@ Open MPIのソース読みのメモ
   * Open MPI 2.0
 
     + `MPI_INIT <./v2.0/mpi-init-sequence.txt>`_
+
+- プロトコル
+
+  * Open MPI 2.1
+
+    + `ob1 PML <./v2.1/pml-ob1-protocols.en.xhtml>`_ (英語)
