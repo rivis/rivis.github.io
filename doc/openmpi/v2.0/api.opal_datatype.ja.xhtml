@@ -1,0 +1,1330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+    <title>opal_datatype_t (OPALのdatatype)</title>
+    <link rel="stylesheet" href="../../../css/docutils-report.css" type="text/css" />
+  </head>
+  <body>
+    <div class="document" id="opal-datatype-t-opaldatatype">
+      <h1 class="title"><tt class="docutils literal">opal_datatype_t</tt> (OPALのdatatype)</h1>
+<!-- style: docutils-report -->
+      <p>
+2014年11月ごろの <a class="reference external" href="https://www.open-mpi.org/">Open MPI</a> の
+<tt class="docutils literal">opal_datatype_t</tt> 関連のソースを読んだときのメモ。</p>
+      <div class="contents topic" id="id1">
+        <p class="topic-title first">目次</p>
+        <ul class="simple">
+          <li>
+            <a class="reference internal" href="#id2" id="id17">概要</a>
+          </li>
+          <li>
+            <a class="reference internal" href="#id3" id="id18">マクロ</a>
+            <ul>
+              <li>
+                <a class="reference internal" href="#opal-datatype-flag" id="id19">
+                  <tt class="docutils literal">OPAL_DATATYPE_FLAG_*</tt>
+                </a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-unavailable" id="id20">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_UNAVAILABLE</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-predefined" id="id21">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_PREDEFINED</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-commited" id="id22">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_COMMITED</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-overlap" id="id23">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_OVERLAP</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-contiguous" id="id24">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_CONTIGUOUS</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-no-gaps" id="id25">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_NO_GAPS</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-user-lb" id="id26">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_USER_LB</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-user-ub" id="id27">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_USER_UB</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-data" id="id28">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_DATA</tt>
+                    </a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opal-datatype-flag-basic" id="id29">
+                      <tt class="docutils literal">OPAL_DATATYPE_FLAG_BASIC</tt>
+                    </a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <a class="reference internal" href="#id4" id="id30">構造体・共用体</a>
+            <ul>
+              <li>
+                <a class="reference internal" href="#opal-datatype-t-struct" id="id31"><tt class="docutils literal">opal_datatype_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#super-opal-object-t" id="id32"><tt class="docutils literal">super</tt> (<tt class="docutils literal">opal_object_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#flags-uint16-t" id="id33"><tt class="docutils literal">flags</tt> (<tt class="docutils literal">uint16_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id-uint16-t" id="id34"><tt class="docutils literal">id</tt> (<tt class="docutils literal">uint16_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#bdt-used-uint32-t" id="id35"><tt class="docutils literal">bdt_used</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#size-size-t" id="id36"><tt class="docutils literal">size</tt> (<tt class="docutils literal">size_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#true-lb-opal-ptrdiff-type" id="id37"><tt class="docutils literal">true_lb</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#true-ub-opal-ptrdiff-type" id="id38"><tt class="docutils literal">true_ub</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#lb-opal-ptrdiff-type" id="id39"><tt class="docutils literal">lb</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#ub-opal-ptrdiff-type" id="id40"><tt class="docutils literal">ub</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#nbelems-size-t" id="id41"><tt class="docutils literal">nbElems</tt> (<tt class="docutils literal">size_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#align-uint32-t" id="id42"><tt class="docutils literal">align</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#name-char-opal-max-object-name" id="id43"><tt class="docutils literal">name</tt> (<tt class="docutils literal">char[OPAL_MAX_OBJECT_NAME]</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#desc-dt-type-desc-t" id="id44"><tt class="docutils literal">desc</tt> (<tt class="docutils literal">dt_type_desc_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#opt-desc-dt-type-desc-t" id="id45"><tt class="docutils literal">opt_desc</tt> (<tt class="docutils literal">dt_type_desc_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#btypes-uint32-t-opal-datatype-max-supported" id="id46"><tt class="docutils literal">btypes</tt> (<tt class="docutils literal">uint32_t[OPAL_DATATYPE_MAX_SUPPORTED]</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#dt-type-desc-t-struct" id="id47"><tt class="docutils literal">dt_type_desc_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#length-opal-datatype-count-t" id="id48"><tt class="docutils literal">length</tt> (<tt class="docutils literal">opal_datatype_count_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#used-opal-datatype-count-t" id="id49"><tt class="docutils literal">used</tt> (<tt class="docutils literal">opal_datatype_count_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#desc-dt-elem-desc-t" id="id50"><tt class="docutils literal">desc</tt> (<tt class="docutils literal">dt_elem_desc_t *</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#ddt-elem-id-description-struct" id="id51"><tt class="docutils literal">ddt_elem_id_description</tt> (<tt class="docutils literal">struct</tt>)</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#id5" id="id52"><tt class="docutils literal">flags</tt> (<tt class="docutils literal">uint16_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#type-uint16-t" id="id53"><tt class="docutils literal">type</tt> (<tt class="docutils literal">uint16_t</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#dt-elem-desc-t-union" id="id54"><tt class="docutils literal">dt_elem_desc_t</tt> (<tt class="docutils literal">union</tt>)</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#elem-ddt-elem-desc-t" id="id55"><tt class="docutils literal">elem</tt> (<tt class="docutils literal">ddt_elem_desc_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#loop-ddt-loop-desc-t" id="id56"><tt class="docutils literal">loop</tt> (<tt class="docutils literal">ddt_loop_desc_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#end-loop-ddt-endloop-desc-t" id="id57"><tt class="docutils literal">end_loop</tt> (<tt class="docutils literal">ddt_endloop_desc_t</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#ddt-elem-desc-t-struct" id="id58"><tt class="docutils literal">ddt_elem_desc_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#common-ddt-elem-id-description" id="id59"><tt class="docutils literal">common</tt> (<tt class="docutils literal">ddt_elem_id_description</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#count-uint32-t" id="id60"><tt class="docutils literal">count</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#blocklen-uint32-t" id="id61"><tt class="docutils literal">blocklen</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#extent-opal-ptrdiff-type" id="id62"><tt class="docutils literal">extent</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#disp-opal-ptrdiff-type" id="id63"><tt class="docutils literal">disp</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#ddt-loop-desc-t-struct" id="id64"><tt class="docutils literal">ddt_loop_desc_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#id6" id="id65"><tt class="docutils literal">common</tt> (<tt class="docutils literal">ddt_elem_id_description</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#loops-uint32-t" id="id66"><tt class="docutils literal">loops</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#items-uint32-t" id="id67"><tt class="docutils literal">items</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#unused-size-t" id="id68"><tt class="docutils literal">unused</tt> (<tt class="docutils literal">size_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id7" id="id69"><tt class="docutils literal">extent</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#ddt-endloop-desc-t-struct" id="id70"><tt class="docutils literal">ddt_endloop_desc_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#id8" id="id71"><tt class="docutils literal">common</tt> (<tt class="docutils literal">ddt_elem_id_description</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id9" id="id72"><tt class="docutils literal">items</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#unused-uint32-t" id="id73"><tt class="docutils literal">unused</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id10" id="id74"><tt class="docutils literal">size</tt> (<tt class="docutils literal">size_t</tt>)</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#first-elem-disp-opal-ptrdiff-type" id="id75"><tt class="docutils literal">first_elem_disp</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <a class="reference internal" href="#id11" id="id76">関数</a>
+            <ul>
+              <li>
+                <a class="reference internal" href="#opal-datatype-create" id="id77">
+                  <tt class="docutils literal">opal_datatype_create</tt>
+                </a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#expectedsize-int32-t-in" id="id78"><tt class="docutils literal">expectedSize</tt> (<tt class="docutils literal">int32_t</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#return-opal-datatype-t" id="id79">return <tt class="docutils literal">opal_datatype_t *</tt></a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#opal-datatype-add" id="id80">
+                  <tt class="docutils literal">opal_datatype_add</tt>
+                </a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#pdtbase-opal-datatype-t-in-out" id="id81"><tt class="docutils literal">pdtBase</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#pdtadd-opal-datatype-t-in" id="id82"><tt class="docutils literal">pdtAdd</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#count-uint32-t-in" id="id83"><tt class="docutils literal">count</tt> (<tt class="docutils literal">uint32_t</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#disp-opal-ptrdiff-type-in" id="id84"><tt class="docutils literal">disp</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#extent-opal-ptrdiff-type-in" id="id85"><tt class="docutils literal">extent</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#return-int32-t" id="id86">return (<tt class="docutils literal">int32_t</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#opal-datatype-clone" id="id87">
+                  <tt class="docutils literal">opal_datatype_clone</tt>
+                </a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#src-type-opal-datatype-t-in" id="id88"><tt class="docutils literal">src_type</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#dest-type-opal-datatype-t-in-out" id="id89"><tt class="docutils literal">dest_type</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id12" id="id90">return (<tt class="docutils literal">int32_t</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#opal-datatype-resize" id="id91">
+                  <tt class="docutils literal">opal_datatype_resize</tt>
+                </a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#type-opal-datatype-t-in-out" id="id92"><tt class="docutils literal">type</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#lb-opal-ptrdiff-type-in" id="id93"><tt class="docutils literal">lb</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id13" id="id94"><tt class="docutils literal">extent</tt><tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt> [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id14" id="id95">return (<tt class="docutils literal">int32_t</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#opal-datatype-commit" id="id96">
+                  <tt class="docutils literal">opal_datatype_commit</tt>
+                </a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#pdata-opal-datatype-t-in-out" id="id97"><tt class="docutils literal">pData</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id15" id="id98">return (<tt class="docutils literal">int32_t</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#opal-datatype-copy-content-same-ddt" id="id99">
+                  <tt class="docutils literal">opal_datatype_copy_content_same_ddt</tt>
+                </a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#datatype-opal-datatype-t-in-out" id="id100"><tt class="docutils literal">datatype</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#count-int32-t-in" id="id101"><tt class="docutils literal">count</tt> (<tt class="docutils literal">int32_t</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#destination-base-char-out" id="id102"><tt class="docutils literal">destination_base</tt> (<tt class="docutils literal">char *</tt>) [OUT]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#source-base-char-in" id="id103"><tt class="docutils literal">source_base</tt> (<tt class="docutils literal">char *</tt>) [IN]</a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#id16" id="id104">return (<tt class="docutils literal">int32_t</tt>)</a>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="section" id="id2">
+        <h1>
+          <a class="toc-backref" href="#id17">概要</a>
+        </h1>
+        <p>
+Open MPIでは、MPI StandardのdatatypeをOPALとOMPIの2段階で扱う。</p>
+        <p>
+OPALでは、MPI Standardのdatatypeを表現・作成するのに必要な基本的な構造・処理と、プラットフォーム・プログラミング言語に依存しない基本的なdatatypeを提供する。</p>
+        <p>
+OPALでは、datatypeは構造体 <tt class="docutils literal">opal_datatype_t</tt> のオブジェクトとして表現される。type mapは <tt class="docutils literal"><span class="pre">opal_datatype_t::desc</span></tt> に格納され、LB, UBなどは <tt class="docutils literal"><span class="pre">opal_datatype_t::true_lb</span></tt>, <tt class="docutils literal"><span class="pre">opal_datatype_t::true_ub</span></tt>,
+<tt class="docutils literal"><span class="pre">opal_datatype_t::lb</span></tt>, <tt class="docutils literal"><span class="pre">opal_datatype_t::ub</span></tt> に格納される。</p>
+        <p>
+OPALに定義されるdatatypeは、 <tt class="docutils literal">opal_datatype_loop</tt>, <tt class="docutils literal">opal_datatype_lb</tt>
+などの制御用のdatatypeと、 <tt class="docutils literal">opal_datatype_int4</tt>, <tt class="docutils literal">opal_datatype_uint8</tt>,
+<tt class="docutils literal">opal_datatype_float8</tt>, <tt class="docutils literal">opal_datatype_bool</tt> などの、プラットフォームやプログラミング言語に依存しないデータ用のdatatypeのみである。</p>
+      </div>
+      <div class="section" id="id3">
+        <h1>
+          <a class="toc-backref" href="#id18">マクロ</a>
+        </h1>
+        <div class="section" id="opal-datatype-flag">
+          <h2>
+            <a class="toc-backref" href="#id19">
+              <tt class="docutils literal">OPAL_DATATYPE_FLAG_*</tt>
+            </a>
+          </h2>
+          <p><tt class="docutils literal"><span class="pre">opal_datatype_t::flags</span></tt> と <tt class="docutils literal"><span class="pre">ddt_elem_id_description::flags</span></tt> に設定されるフラグ。</p>
+          <div class="section" id="opal-datatype-flag-unavailable">
+            <h3>
+              <a class="toc-backref" href="#id20">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_UNAVAILABLE</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+datatypes unavailable on the build (OS or compiler dependant)</blockquote>
+            <p>
+例えば、Open MPIをFortranサポート無しで構築した場合は、
+<tt class="docutils literal">ompi_mpi_integer</tt> (<tt class="docutils literal">MPI_INTEGER</tt>) に、このフラグが設定される。</p>
+          </div>
+          <div class="section" id="opal-datatype-flag-predefined">
+            <h3>
+              <a class="toc-backref" href="#id21">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_PREDEFINED</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+cannot be removed: initial and predefined datatypes</blockquote>
+            <p>
+OPALのpredefined datatypeに、このフラグが設定される。</p>
+            <p><tt class="docutils literal">MPI_2INT</tt> などの、MPI Standardで定義されているがbasic datatypeではないpredefined datatypeには、このフラグは設定されない。</p>
+          </div>
+          <div class="section" id="opal-datatype-flag-commited">
+            <h3>
+              <a class="toc-backref" href="#id22">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_COMMITED</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+ready to be used for a send/recv operation</blockquote>
+            <p>
+predefined datatypeと <tt class="docutils literal">opal_datatype_commit</tt> (<tt class="docutils literal">ompi_datatype_commit</tt>,
+<tt class="docutils literal">MPI_Type_commit</tt>)が呼ばれたdatatypeに、このフラグが設定される。</p>
+          </div>
+          <div class="section" id="opal-datatype-flag-overlap">
+            <h3>
+              <a class="toc-backref" href="#id23">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_OVERLAP</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+datatype is unpropper for a recv operation</blockquote>
+          </div>
+          <div class="section" id="opal-datatype-flag-contiguous">
+            <h3>
+              <a class="toc-backref" href="#id24">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_CONTIGUOUS</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+contiguous datatype</blockquote>
+            <p>
+type map通りにbasic datatypeをメモリ上に配置したときにそれらのデータが隙間無く連続に並ぶ場合に、このフラグが設定される。ただし、LBとUBは無視する。</p>
+            <p>
+例えば、以下のtype mapのdatatypeでは、このフラグが設定される。:</p>
+            <pre class="literal-block">
+{ (uint32_t, 0), (uint16_t, 4), (uint8_t, 6) }
+</pre>
+            <p>
+以下のtype mapのdatatypeのように、隙間はないが順番通りでないdatatypeでは、このフラグは設定されない。:</p>
+            <pre class="literal-block">
+{ (uint16_t, 4), (uint8_t, 6), (uint32_t, 0) }
+</pre>
+          </div>
+          <div class="section" id="opal-datatype-flag-no-gaps">
+            <h3>
+              <a class="toc-backref" href="#id25">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_NO_GAPS</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+no gaps around the datatype, aka OPAL_DATATYPE_FLAG_CONTIGUOUS
+and extent == size</blockquote>
+            <p>
+フラグ <tt class="docutils literal">OPAL_DATATYPE_FLAG_CONTIGUOUS</tt> が設定され、かつ、extentとsizeが等しいdatatypeに、このフラグが設定される。つまり、このdatatypeのデータを複数個並べたときにそれらのデータが隙間無く連続に並ぶ場合に、このフラグが設定される。</p>
+            <p>
+例えば、以下のtype mapのdatatypeでは、データが隙間無く連続に並び、extentもsizeも8なので、このフラグが設定される。:</p>
+            <pre class="literal-block">
+{ (uint32_t, 0), (uint16_t, 4), (uint8_t, 6), (uint8_t, 7) }
+</pre>
+            <p>
+しかし、以下のtype mapのdatatypeでは、 <tt class="docutils literal">uint32_t</tt> のalignementが4なので <tt class="docutils literal">uint8_t</tt> の後に1バイトの空白が入ってextentが8になるが、sizeは7なので、このフラグは設定されない。:</p>
+            <pre class="literal-block">
+{ (uint32_t, 0), (uint16_t, 4), (uint8_t, 6) }
+</pre>
+          </div>
+          <div class="section" id="opal-datatype-flag-user-lb">
+            <h3>
+              <a class="toc-backref" href="#id26">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_USER_LB</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+has a user defined LB</blockquote>
+            <p>
+ユーザが <tt class="docutils literal">opal_datatype_lb</tt> (<tt class="docutils literal">ompi_mpi_lb</tt>, <tt class="docutils literal">MPI_LB</tt>) を使用してLBを設定したdatatypeに、このフラグが設定される。ユーザが設定したLBがtrue LBと同じであっても、このフラグが設定される。</p>
+            <p><tt class="docutils literal">opal_datatype_resize</tt> (<tt class="docutils literal">ompi_datatype_create_resized</tt>,
+<tt class="docutils literal">MPI_Type_create_resized</tt>)関数だけを使用してLBを設定したdatatypeには、このフラグは設定されない。</p>
+            <p><tt class="docutils literal">opal_datatype_lb</tt> (<tt class="docutils literal">ompi_mpi_lb</tt>)自体にはこのフラグは設定されない。</p>
+          </div>
+          <div class="section" id="opal-datatype-flag-user-ub">
+            <h3>
+              <a class="toc-backref" href="#id27">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_USER_UB</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+has a user defined UB</blockquote>
+            <p>
+ユーザが <tt class="docutils literal">opal_datatype_ub</tt> (<tt class="docutils literal">ompi_mpi_ub</tt>, <tt class="docutils literal">MPI_UB</tt>) を使用してUBを設定したdatatypeに、このフラグが設定される。ユーザが設定したUBがtrue UBと同じであっても、このフラグが設定される。</p>
+            <p><tt class="docutils literal">opal_datatype_resize</tt> (<tt class="docutils literal">ompi_datatype_create_resized</tt>,
+<tt class="docutils literal">MPI_Type_create_resized</tt>)関数だけを使用してUBを設定したdatatypeには、このフラグは設定されない。</p>
+            <p><tt class="docutils literal">opal_datatype_ub</tt> (<tt class="docutils literal">ompi_mpi_ub</tt>)自体にはこのフラグは設定されない。</p>
+          </div>
+          <div class="section" id="opal-datatype-flag-data">
+            <h3>
+              <a class="toc-backref" href="#id28">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_DATA</tt>
+              </a>
+            </h3>
+            <blockquote>
+
+data or control structure</blockquote>
+            <p><tt class="docutils literal">opal_datatype_int4</tt> などのデータを表すbasic datatypeおよびそれらを含むderived datatypeにはこのフラグが設定される。</p>
+            <p><tt class="docutils literal">opal_datatype_loop</tt>, <tt class="docutils literal">opal_datatype_end_loop</tt>, <tt class="docutils literal">opal_datatype_lb</tt>,
+<tt class="docutils literal">opal_datatype_ub</tt> といった制御を表すdatatypeや、 <tt class="docutils literal">opal_datatype_empty</tt>,
+<tt class="docutils literal">opal_datatype_unavailable</tt> などのtype mapが空のdatatypeには、このフラグは設定されない。</p>
+          </div>
+          <div class="section" id="opal-datatype-flag-basic">
+            <h3>
+              <a class="toc-backref" href="#id29">
+                <tt class="docutils literal">OPAL_DATATYPE_FLAG_BASIC</tt>
+              </a>
+            </h3>
+            <p></p>
+            <pre class="literal-block">
+(OPAL_DATATYPE_FLAG_PREDEFINED |
+ OPAL_DATATYPE_FLAG_CONTIGUOUS |
+ OPAL_DATATYPE_FLAG_NO_GAPS |
+ OPAL_DATATYPE_FLAG_DATA |
+ OPAL_DATATYPE_FLAG_COMMITED)
+</pre>
+          </div>
+        </div>
+      </div>
+      <div class="section" id="id4">
+        <h1>
+          <a class="toc-backref" href="#id30">構造体・共用体</a>
+        </h1>
+        <div class="section" id="opal-datatype-t-struct">
+          <h2>
+            <a class="toc-backref" href="#id31"><tt class="docutils literal">opal_datatype_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+          </h2>
+          <p>
+OPALのdatatype。</p>
+          <div class="section" id="super-opal-object-t">
+            <h3>
+              <a class="toc-backref" href="#id32"><tt class="docutils literal">super</tt> (<tt class="docutils literal">opal_object_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+basic superclass</blockquote>
+          </div>
+          <div class="section" id="flags-uint16-t">
+            <h3>
+              <a class="toc-backref" href="#id33"><tt class="docutils literal">flags</tt> (<tt class="docutils literal">uint16_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+the flags</blockquote>
+            <p><tt class="docutils literal">OPAL_DATATYPE_FLAG_*</tt> と <tt class="docutils literal">OMPI_DATATYPE_FLAG_*</tt> の論理和。</p>
+          </div>
+          <div class="section" id="id-uint16-t">
+            <h3>
+              <a class="toc-backref" href="#id34"><tt class="docutils literal">id</tt> (<tt class="docutils literal">uint16_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+data id, normally the index in the data array</blockquote>
+            <p>
+datatypeのOPALでのID。</p>
+            <p>
+datatypeに応じて、IDが以下のように割り振られる。</p>
+            <dl class="docutils">
+              <dt>OPALの制御用のpredefined datatype (<tt class="docutils literal">opal_datatype_lb</tt> など)</dt>
+              <dd><tt class="docutils literal">opal/datatype/opal_datatype_internal.h</tt> に定義された
+<tt class="docutils literal">OPAL_DATATYPE_LB</tt> などの <tt class="docutils literal">OPAL_DATATYPE_*</tt>  。</dd>
+              <dt>OPALのデータ用のpredefined datatype (<tt class="docutils literal">opal_datatype_int4</tt> など)</dt>
+              <dd><tt class="docutils literal">opal/datatype/opal_datatype_internal.h</tt> に定義された
+<tt class="docutils literal">OPAL_DATATYPE_INT4</tt> などの <tt class="docutils literal">OPAL_DATATYPE_*</tt>  。</dd>
+              <dt>対応するOPALのdatatypeが存在するOMPIのpredefined datatype (<tt class="docutils literal">ompi_mpi_int</tt> など)</dt>
+              <dd>
+対応するOPALのdatatypeのID。</dd>
+              <dt>対応するOPALのdatatypeが存在しないOMPIのpredefined datatype (<tt class="docutils literal">ompi_mpi_2int</tt> など)</dt>
+              <dd><tt class="docutils literal">ompi/datatype/ompi_datatype_internal.h</tt> に定義された
+<tt class="docutils literal">OMPI_DATATYPE_2INT</tt> などの <tt class="docutils literal">OMPI_DATATYPE_*</tt>
+(<tt class="docutils literal">OMPI_DATATYPE_MPI_2INT</tt> などの <tt class="docutils literal">MPI_</tt> が付かない方)。</dd>
+              <dt>OMPIの使用できないdatatype (Open MPIをFortranサポート無しで構築した場合の <tt class="docutils literal">ompi_mpi_integer</tt> など)</dt>
+              <dd><tt class="docutils literal">OPAL_DATATYPE_UNAVAILABLE</tt> 。</dd>
+              <dt><tt class="docutils literal">opal_datatype_clone</tt> (<tt class="docutils literal">ompi_datatype_duplicate</tt>, <tt class="docutils literal">MPI_TYPE_DUP</tt>)で複製されたderived datatype</dt>
+              <dd>
+複製元のdatatypeのID。</dd>
+              <dt>それ以外のderived datatype</dt>
+              <dd>
+0。</dd>
+            </dl>
+            <p>
+上記の通り、対応するOPALのdatatypeが存在するOMPIのpredefined datatypeでは、複数のdatatypeが同一の
+<tt class="docutils literal">id</tt> の値を持つことがある。たとえば、C言語の <tt class="docutils literal">int</tt> やFortranの
+<tt class="docutils literal">integer</tt> が4バイトの場合は、以下のdatatypeはすべて <tt class="docutils literal">id</tt> の値が
+<tt class="docutils literal">OPAL_DATATYPE_INT4</tt> になる。</p>
+            <ul class="simple">
+              <li>
+                <tt class="docutils literal">opal_datatype_int4</tt>
+              </li>
+              <li>
+                <tt class="docutils literal">ompi_mpi_int</tt>
+              </li>
+              <li>
+                <tt class="docutils literal">ompi_mpi_int32_t</tt>
+              </li>
+              <li>
+                <tt class="docutils literal">ompi_mpi_integer</tt>
+              </li>
+              <li>
+                <tt class="docutils literal">ompi_mpi_integer4</tt>
+              </li>
+            </ul>
+          </div>
+          <div class="section" id="bdt-used-uint32-t">
+            <h3>
+              <a class="toc-backref" href="#id35"><tt class="docutils literal">bdt_used</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+bitset of which basic datatypes are used in the data description</blockquote>
+          </div>
+          <div class="section" id="size-size-t">
+            <h3>
+              <a class="toc-backref" href="#id36"><tt class="docutils literal">size</tt> (<tt class="docutils literal">size_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+total size in bytes of the memory used by the data if the data is
+put on a contiguous buffer</blockquote>
+          </div>
+          <div class="section" id="true-lb-opal-ptrdiff-type">
+            <h3>
+              <a class="toc-backref" href="#id37"><tt class="docutils literal">true_lb</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+            </h3>
+            <blockquote>
+
+the true lb of the data without user defined lb and ub</blockquote>
+          </div>
+          <div class="section" id="true-ub-opal-ptrdiff-type">
+            <h3>
+              <a class="toc-backref" href="#id38"><tt class="docutils literal">true_ub</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+            </h3>
+            <blockquote>
+
+the true ub of the data without user defined lb and ub</blockquote>
+          </div>
+          <div class="section" id="lb-opal-ptrdiff-type">
+            <h3>
+              <a class="toc-backref" href="#id39"><tt class="docutils literal">lb</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+            </h3>
+            <blockquote>
+
+lower bound in memory</blockquote>
+          </div>
+          <div class="section" id="ub-opal-ptrdiff-type">
+            <h3>
+              <a class="toc-backref" href="#id40"><tt class="docutils literal">ub</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+            </h3>
+            <blockquote>
+
+upper bound in memory</blockquote>
+          </div>
+          <div class="section" id="nbelems-size-t">
+            <h3>
+              <a class="toc-backref" href="#id41"><tt class="docutils literal">nbElems</tt> (<tt class="docutils literal">size_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+total number of elements inside the datatype</blockquote>
+          </div>
+          <div class="section" id="align-uint32-t">
+            <h3>
+              <a class="toc-backref" href="#id42"><tt class="docutils literal">align</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+data should be aligned to</blockquote>
+          </div>
+          <div class="section" id="name-char-opal-max-object-name">
+            <h3>
+              <a class="toc-backref" href="#id43"><tt class="docutils literal">name</tt> (<tt class="docutils literal">char[OPAL_MAX_OBJECT_NAME]</tt>)</a>
+            </h3>
+            <blockquote>
+
+name of the datatype</blockquote>
+          </div>
+          <div class="section" id="desc-dt-type-desc-t">
+            <h3>
+              <a class="toc-backref" href="#id44"><tt class="docutils literal">desc</tt> (<tt class="docutils literal">dt_type_desc_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+the data description</blockquote>
+            <p>
+type mapを表現する情報。平坦なtype mapではなく、繰り返しを階層的に用いてtype mapを表現する。</p>
+            <p>
+LB, UBの情報は持たず、 <tt class="docutils literal">MPI_TYPE_CREATE_RESIZED</tt> の影響を受けない。</p>
+          </div>
+          <div class="section" id="opt-desc-dt-type-desc-t">
+            <h3>
+              <a class="toc-backref" href="#id45"><tt class="docutils literal">opt_desc</tt> (<tt class="docutils literal">dt_type_desc_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+short description of the data used when conversion is useless or in
+the send case (without conversion)</blockquote>
+            <p><tt class="docutils literal">desc</tt> に対して、以下の最適化を行ったもの。</p>
+            <ul class="simple">
+              <li>
+type signature上で連続する2つ以上のデータが、メモリ上で連続する場合は、それらを1つの <tt class="docutils literal">ddt_elem_desc_t</tt> にまとめる。それらのdatatype (OPALのbasic datatype)が同一でない場合は、 <tt class="docutils literal">OPAL_DATATYPE_UINT1</tt>
+に変換する。これにより、繰り返しの階層が減る。</li>
+              <li><tt class="docutils literal">ddt_loop_desc_t</tt> と <tt class="docutils literal">ddt_endloop_desc_t</tt> による繰り返しが2回以下であり、繰り返しの内容がbasic datatype 1個の場合は、
+<tt class="docutils literal">ddt_loop_desc_t</tt> と <tt class="docutils literal">ddt_endloop_desc_t</tt> を削除し、繰り返しの内容を上位の階層に展開する。これにより、繰り返しの階層が減る。このとき、basic datatypeが <tt class="docutils literal">OPAL_DATATYPE_UINT1</tt> に変換されることがある。</li>
+            </ul>
+            <p>
+例えば、以下のように作成した、 <tt class="docutils literal">OPAL_DATATYPE_UINT8</tt> が1個、
+<tt class="docutils literal">OPAL_DATATYPE_UINT4</tt> が1個と <tt class="docutils literal">OPAL_DATATYPE_UINT2</tt> が2個の繰り返しが2回、後ろに2バイトの隙間のある <tt class="docutils literal">OPAL_DATATYPE_UINT2</tt> の繰り返しが3回の、derived datatypeを考える。:</p>
+            <pre class="literal-block">
+int blengths1[3] = {1, 1, 1};
+MPI_Aint disps1[3] = {0, 4, 6};
+MPI_Datatype dtypes1[3] = {MPI_UINT32_T, MPI_UINT16_T, MPI_UINT16_T};
+
+int blengths3[3] = {1, 2, 3};
+MPI_Aint disps3[3] = {0, 8, 24};
+MPI_Datatype dtypes3[3];
+
+MPI_Type_create_struct(3, blengths1, disps1, dtypes1, &amp;dt1);
+MPI_Type_create_resized(MPI_UINT16_T, 0, 4, &amp;dt2);
+dtypes3[0] = MPI_UINT64_T;
+dtypes3[1] = dt1;
+dtypes3[2] = dt2;
+MPI_Type_create_struct(3, blengths3, disps3, dtypes3, &amp;dt);
+MPI_Type_commit(&amp;dt);
+</pre>
+            <p>
+これを図で現すと以下である。 <tt class="docutils literal">■</tt> はデータ1バイト、 <tt class="docutils literal">□</tt> は隙間
+1バイトを示す。:</p>
+            <pre class="literal-block">
+■■■■■■■■ ■■■■ ■■ ■■ ■■■■ ■■ ■■ ■■□□ ■■□□ ■■□□
+</pre>
+            <p>
+このderived datatypeでは、 <tt class="docutils literal">desc</tt> は、以下の配列で構成される。:</p>
+            <pre class="literal-block">
+elem    { .type = OPAL_DATATYPE_UINT8, .count =  1, .disp =  0, .extent = 8 }
+loop    { .loops = 2, .extent = 8 }
+elem    { .type = OPAL_DATATYPE_UINT4, .count =  1, .disp =  8, .extent = 4 }
+elem    { .type = OPAL_DATATYPE_UINT2, .count =  2, .disp = 12, .extent = 2 }
+endloop
+loop    { .loops = 3, extent = 4 }
+elem    { .type = OPAL_DATATYPE_UINT2, .count =  1, .extent = 2, .disp = 24 }
+endloop
+endloop
+</pre>
+            <p><tt class="docutils literal">opt_desc</tt> では、最初の <tt class="docutils literal">ddt_loop_desc_t</tt> は直前の
+<tt class="docutils literal">OPAL_DATATYPE_UINT8</tt> と連続なのでまとめられ、さらに2つめの
+<tt class="docutils literal">ddt_loop_desc_t</tt> の最初の <tt class="docutils literal">OPAL_DATATYPE_UINT2</tt> も連続なのでまとめられ、2つめの <tt class="docutils literal">ddt_loop_desc_t</tt> の残りの2つの <tt class="docutils literal">OPAL_DATATYPE_UINT2</tt>
+は上位の階層に2個ずつの <tt class="docutils literal">OPAL_DATATYPE_UINT1</tt> として展開され、その結果、以下の配列で構成される。:</p>
+            <pre class="literal-block">
+elem    { .type = OPAL_DATATYPE_UINT1, count = 26, disp =  0, extent = 1 }
+elem    { .type = OPAL_DATATYPE_UINT1, count =  2, disp = 28, extent = 1 }
+elem    { .type = OPAL_DATATYPE_UINT1, count =  2, disp = 32, extent = 1 }
+endloop
+</pre>
+          </div>
+          <div class="section" id="btypes-uint32-t-opal-datatype-max-supported">
+            <h3>
+              <a class="toc-backref" href="#id46"><tt class="docutils literal">btypes</tt> (<tt class="docutils literal">uint32_t[OPAL_DATATYPE_MAX_SUPPORTED]</tt>)</a>
+            </h3>
+            <blockquote>
+
+basic elements count used to compute the size of the datatype for
+remote nodes. The length of the array is dependent on the maximum
+number of datatypes of all top layers. Reason being is that Fortran
+is not at the OPAL layer.</blockquote>
+          </div>
+        </div>
+        <div class="section" id="dt-type-desc-t-struct">
+          <h2>
+            <a class="toc-backref" href="#id47"><tt class="docutils literal">dt_type_desc_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+          </h2>
+          <div class="section" id="length-opal-datatype-count-t">
+            <h3>
+              <a class="toc-backref" href="#id48"><tt class="docutils literal">length</tt> (<tt class="docutils literal">opal_datatype_count_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+the maximum number of elements in the description array</blockquote>
+            <p><tt class="docutils literal">desc</tt> 配列の、メモリを確保した要素の数。</p>
+            <p>
+basic datatypeでは値が1になる。</p>
+          </div>
+          <div class="section" id="used-opal-datatype-count-t">
+            <h3>
+              <a class="toc-backref" href="#id49"><tt class="docutils literal">used</tt> (<tt class="docutils literal">opal_datatype_count_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+the number of used elements in the description array</blockquote>
+            <p><tt class="docutils literal">desc</tt> 配列の、意味のある要素の数。commitされたdatatypeの <tt class="docutils literal">desc</tt> の最後の <tt class="docutils literal">ddt_endloop_desc_t</tt> は含まない。</p>
+            <p>
+basic datatypeでは値が1になる。</p>
+          </div>
+          <div class="section" id="desc-dt-elem-desc-t">
+            <h3>
+              <a class="toc-backref" href="#id50"><tt class="docutils literal">desc</tt> (<tt class="docutils literal">dt_elem_desc_t *</tt>)</a>
+            </h3>
+            <p><tt class="docutils literal">dt_elem_desc_t</tt> 共用体の配列へのポインタ。</p>
+            <p>
+basic datatypeでは、 <tt class="docutils literal">opal_datatype_predefined_elem_desc</tt> 配列の要素を指し、その要素には以下が設定される。:</p>
+            <pre class="literal-block">
+.elem.common.flags = OPAL_DATATYPE_FLAG_PREDEFINED |
+                     OPAL_DATATYPE_FLAG_DATA |
+                     OPAL_DATATYPE_FLAG_CONTIGUOUS |
+                     OPAL_DATATYPE_FLAG_NO_GAPS;
+.elem.common.type  = datatype-&gt;id;
+.elem.count        = 1;
+.elem.disp         = 0;
+.elem.extent       = datatype-&gt;size;
+</pre>
+            <p><tt class="docutils literal">dt_elem_desc_t</tt> 共用体の配列は、EBNF (Extended Backus-Naur Form)で表現すると、commitされていないdatatypeは以下の <tt class="docutils literal"><span class="pre">uncommitted-desc</span></tt> で、commitされたdatatypeは以下の <tt class="docutils literal"><span class="pre">committed-desc</span></tt> で、現される。なお、EBNFでは、 <tt class="docutils literal">{</tt> と <tt class="docutils literal">}</tt> で囲まれた部分は0回以上の繰り返し、
+<tt class="docutils literal">(</tt> と <tt class="docutils literal">)</tt> で囲まれた部分はグループ化、 <tt class="docutils literal">|</tt> は選択を示す。:</p>
+            <pre class="literal-block">
+elements         = "ddt_elem_desc_t" , { "ddt_elem_desc_t" } ;
+loop             = "ddt_loop_desc_t" , ( elememts | loop ) , { elememts | loop } , "ddt_endloop_desc_t" ;
+uncommitted-desc = elements | loop ;
+committed-desc   = uncommitted-desc , "ddt_endloop_desc_t" ;
+</pre>
+            <p>
+この配列に <tt class="docutils literal">OPAL_DATATYPE_LB</tt> と <tt class="docutils literal">OPAL_DATATYPE_UB</tt> に相当する要素は含まれない。</p>
+            <p><tt class="docutils literal"><span class="pre">committed-desc</span></tt> の最後の要素は <tt class="docutils literal">ddt_endloop_desc_t</tt> であり、それに対応する <tt class="docutils literal">ddt_loop_desc_t</tt> は存在しない。これは、たとえば <tt class="docutils literal">MPI_Send</tt>
+関数のようにこのdatatypeのデータが複数(<tt class="docutils literal">count</tt>)個指定されたときに、
+<tt class="docutils literal"><span class="pre">committed-desc</span></tt> の最初の要素の前に <tt class="docutils literal">ddt_loop_desc_t</tt> があるとみなして処理を単純化するためである。</p>
+          </div>
+        </div>
+        <div class="section" id="ddt-elem-id-description-struct">
+          <h2>
+            <a class="toc-backref" href="#id51"><tt class="docutils literal">ddt_elem_id_description</tt> (<tt class="docutils literal">struct</tt>)</a>
+          </h2>
+          <div class="section" id="id5">
+            <h3>
+              <a class="toc-backref" href="#id52"><tt class="docutils literal">flags</tt> (<tt class="docutils literal">uint16_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+flags for the record</blockquote>
+            <p><tt class="docutils literal">OPAL_DATATYPE_FLAG_COMMITED</tt> 以外の <tt class="docutils literal">OPAL_DATATYPE_FLAG_*</tt> の論理和。</p>
+          </div>
+          <div class="section" id="type-uint16-t">
+            <h3>
+              <a class="toc-backref" href="#id53"><tt class="docutils literal">type</tt> (<tt class="docutils literal">uint16_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+the basic data type id</blockquote>
+            <p>
+値はOPALのpredefined datatypeのIDである <tt class="docutils literal">OPAL_DATATYPE_*</tt> 。</p>
+          </div>
+        </div>
+        <div class="section" id="dt-elem-desc-t-union">
+          <h2>
+            <a class="toc-backref" href="#id54"><tt class="docutils literal">dt_elem_desc_t</tt> (<tt class="docutils literal">union</tt>)</a>
+          </h2>
+          <div class="section" id="elem-ddt-elem-desc-t">
+            <h3>
+              <a class="toc-backref" href="#id55"><tt class="docutils literal">elem</tt> (<tt class="docutils literal">ddt_elem_desc_t</tt>)</a>
+            </h3>
+          </div>
+          <div class="section" id="loop-ddt-loop-desc-t">
+            <h3>
+              <a class="toc-backref" href="#id56"><tt class="docutils literal">loop</tt> (<tt class="docutils literal">ddt_loop_desc_t</tt>)</a>
+            </h3>
+          </div>
+          <div class="section" id="end-loop-ddt-endloop-desc-t">
+            <h3>
+              <a class="toc-backref" href="#id57"><tt class="docutils literal">end_loop</tt> (<tt class="docutils literal">ddt_endloop_desc_t</tt>)</a>
+            </h3>
+          </div>
+        </div>
+        <div class="section" id="ddt-elem-desc-t-struct">
+          <h2>
+            <a class="toc-backref" href="#id58"><tt class="docutils literal">ddt_elem_desc_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+          </h2>
+          <p>
+datatypeをbasic datatypeに分解したときのbasic datatypeを示す。</p>
+          <div class="section" id="common-ddt-elem-id-description">
+            <h3>
+              <a class="toc-backref" href="#id59"><tt class="docutils literal">common</tt> (<tt class="docutils literal">ddt_elem_id_description</tt>)</a>
+            </h3>
+            <blockquote>
+
+basic data description and flags</blockquote>
+            <p><tt class="docutils literal">common.type</tt> はOPALのbasic datatypeのID <tt class="docutils literal">OPAL_DATATYPE_*</tt> になる。</p>
+            <p><tt class="docutils literal">common.flags</tt> はbasic datatype 1個あたりの <tt class="docutils literal">flags</tt> 。</p>
+          </div>
+          <div class="section" id="count-uint32-t">
+            <h3>
+              <a class="toc-backref" href="#id60"><tt class="docutils literal">count</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+number of blocks</blockquote>
+            <p>
+連続するbasic datatypeの個数。</p>
+          </div>
+          <div class="section" id="blocklen-uint32-t">
+            <h3>
+              <a class="toc-backref" href="#id61"><tt class="docutils literal">blocklen</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+number of elements on each block</blockquote>
+            <p>
+未使用のフィールド？値は常に 1 。</p>
+          </div>
+          <div class="section" id="extent-opal-ptrdiff-type">
+            <h3>
+              <a class="toc-backref" href="#id62"><tt class="docutils literal">extent</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+            </h3>
+            <blockquote>
+
+extent of each block (in bytes)</blockquote>
+            <p>
+basic datatype 1個あたりのextent。</p>
+          </div>
+          <div class="section" id="disp-opal-ptrdiff-type">
+            <h3>
+              <a class="toc-backref" href="#id63"><tt class="docutils literal">disp</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+            </h3>
+            <blockquote>
+
+displacement of the first block</blockquote>
+            <p>
+最初のblockの、datatype全体の基準位置からのdisplacement。</p>
+          </div>
+        </div>
+        <div class="section" id="ddt-loop-desc-t-struct">
+          <h2>
+            <a class="toc-backref" href="#id64"><tt class="docutils literal">ddt_loop_desc_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+          </h2>
+          <p>
+datatypeをbasic datatypeに分解したときの繰り返しの開始を示す。</p>
+          <p><tt class="docutils literal">ddt_endloop_desc_t</tt> と一対一に対応する。</p>
+          <div class="section" id="id6">
+            <h3>
+              <a class="toc-backref" href="#id65"><tt class="docutils literal">common</tt> (<tt class="docutils literal">ddt_elem_id_description</tt>)</a>
+            </h3>
+            <blockquote>
+
+basic data description and flags</blockquote>
+            <p><tt class="docutils literal">common.type</tt> は <tt class="docutils literal">OPAL_DATATYPE_LOOP</tt> になる。</p>
+            <p><tt class="docutils literal">common.flags</tt> は繰り返し1回あたりの <tt class="docutils literal">flags</tt> 。
+<tt class="docutils literal">OPAL_DATATYPE_FLAG_DATA</tt> は設定されない。</p>
+          </div>
+          <div class="section" id="loops-uint32-t">
+            <h3>
+              <a class="toc-backref" href="#id66"><tt class="docutils literal">loops</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+number of elements</blockquote>
+            <p>
+繰り返しの回数。</p>
+          </div>
+          <div class="section" id="items-uint32-t">
+            <h3>
+              <a class="toc-backref" href="#id67"><tt class="docutils literal">items</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+number of items in the loop</blockquote>
+            <p>
+対応する <tt class="docutils literal">ddt_endloop_desc_t</tt> までの間に、対応する <tt class="docutils literal">ddt_endloop_desc_t</tt> を含めていくつの <tt class="docutils literal">dt_elem_desc</tt> があるか。</p>
+          </div>
+          <div class="section" id="unused-size-t">
+            <h3>
+              <a class="toc-backref" href="#id68"><tt class="docutils literal">unused</tt> (<tt class="docutils literal">size_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+not used right now</blockquote>
+            <p>
+未使用のフィールド。値は常に -1 。</p>
+          </div>
+          <div class="section" id="id7">
+            <h3>
+              <a class="toc-backref" href="#id69"><tt class="docutils literal">extent</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+            </h3>
+            <blockquote>
+
+extent of the whole loop</blockquote>
+            <p>
+繰り返し1回あたりのextent。つまり、繰り返しの次の回で進めるべきdisplacement。</p>
+          </div>
+        </div>
+        <div class="section" id="ddt-endloop-desc-t-struct">
+          <h2>
+            <a class="toc-backref" href="#id70"><tt class="docutils literal">ddt_endloop_desc_t</tt> (<tt class="docutils literal">struct</tt>)</a>
+          </h2>
+          <p>
+datatypeをbasic datatypeに分解したときの繰り返しの終了を示す。</p>
+          <p>
+commitされたdatatypeの最後の <tt class="docutils literal">ddt_endloop_desc_t</tt> を除き、
+<tt class="docutils literal">ddt_loop_desc_t</tt> と一対一に対応する。</p>
+          <div class="section" id="id8">
+            <h3>
+              <a class="toc-backref" href="#id71"><tt class="docutils literal">common</tt> (<tt class="docutils literal">ddt_elem_id_description</tt>)</a>
+            </h3>
+            <blockquote>
+
+basic data description and flags</blockquote>
+            <p><tt class="docutils literal">common.type</tt> は <tt class="docutils literal">OPAL_DATATYPE_END_LOOP</tt> になる。</p>
+            <p><tt class="docutils literal">common.flags</tt> は対応する <tt class="docutils literal">ddt_loop_desc_t</tt> の <tt class="docutils literal">common.flags</tt> と同じ値。</p>
+          </div>
+          <div class="section" id="id9">
+            <h3>
+              <a class="toc-backref" href="#id72"><tt class="docutils literal">items</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+number of elements</blockquote>
+            <p>
+対応する <tt class="docutils literal">ddt_loop_desc_t</tt> の <tt class="docutils literal">loops</tt> と同じ値。</p>
+          </div>
+          <div class="section" id="unused-uint32-t">
+            <h3>
+              <a class="toc-backref" href="#id73"><tt class="docutils literal">unused</tt> (<tt class="docutils literal">uint32_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+not used right now</blockquote>
+            <p>
+未使用のフィールド。値は常に -1 。</p>
+          </div>
+          <div class="section" id="id10">
+            <h3>
+              <a class="toc-backref" href="#id74"><tt class="docutils literal">size</tt> (<tt class="docutils literal">size_t</tt>)</a>
+            </h3>
+            <blockquote>
+
+real size of the data in the loop</blockquote>
+            <p>
+繰り返し1回あたりのデータがメモリ上で占めるサイズ。</p>
+          </div>
+          <div class="section" id="first-elem-disp-opal-ptrdiff-type">
+            <h3>
+              <a class="toc-backref" href="#id75"><tt class="docutils literal">first_elem_disp</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>)</a>
+            </h3>
+            <blockquote>
+
+the displacement of the first block in the loop</blockquote>
+            <p>
+繰り返しに含まれる最初のblockの、datatype全体の基準位置からのdisplacement。</p>
+          </div>
+        </div>
+      </div>
+      <div class="section" id="id11">
+        <h1>
+          <a class="toc-backref" href="#id76">関数</a>
+        </h1>
+        <div class="section" id="opal-datatype-create">
+          <h2>
+            <a class="toc-backref" href="#id77">
+              <tt class="docutils literal">opal_datatype_create</tt>
+            </a>
+          </h2>
+          <p>
+新しいdatatypeのオブジェクトを作成する。</p>
+          <div class="section" id="expectedsize-int32-t-in">
+            <h3>
+              <a class="toc-backref" href="#id78"><tt class="docutils literal">expectedSize</tt> (<tt class="docutils literal">int32_t</tt>) [IN]</a>
+            </h3>
+            <p><tt class="docutils literal"><span class="pre">opal_datatype_t::desc.used</span></tt> に期待される値。</p>
+          </div>
+          <div class="section" id="return-opal-datatype-t">
+            <h3>
+              <a class="toc-backref" href="#id79">return <tt class="docutils literal">opal_datatype_t *</tt></a>
+            </h3>
+            <p>
+新しいdatatypeのオブジェクトへのポインタ。</p>
+          </div>
+        </div>
+        <div class="section" id="opal-datatype-add">
+          <h2>
+            <a class="toc-backref" href="#id80">
+              <tt class="docutils literal">opal_datatype_add</tt>
+            </a>
+          </h2>
+          <p>
+既存のdatatype <tt class="docutils literal">pdtBase</tt> に別の既存のdatatype <tt class="docutils literal">pdtAdd</tt> を <tt class="docutils literal">count</tt> 個
+追加する。</p>
+          <p><tt class="docutils literal">pdtAdd</tt> に <tt class="docutils literal"><span class="pre">opal_datatype_t::id</span></tt> が <tt class="docutils literal">OPAL_DATATYPE_LB</tt> または
+<tt class="docutils literal">OPAL_DATATYPE_UB</tt> のdatatype(<tt class="docutils literal">opal_datatype_lb</tt>, <tt class="docutils literal">ompi_mpi_lb</tt>
+など)を渡してもよく、その場合は <tt class="docutils literal"><span class="pre">opal_datatype_t::lb</span></tt> や
+<tt class="docutils literal"><span class="pre">opal_datatype_t::ub</span></tt> が設定される。</p>
+          <div class="section" id="pdtbase-opal-datatype-t-in-out">
+            <h3>
+              <a class="toc-backref" href="#id81"><tt class="docutils literal">pdtBase</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+            </h3>
+            <p>
+追加先のdatatype。</p>
+          </div>
+          <div class="section" id="pdtadd-opal-datatype-t-in">
+            <h3>
+              <a class="toc-backref" href="#id82"><tt class="docutils literal">pdtAdd</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN]</a>
+            </h3>
+            <p>
+追加するdatatype。</p>
+          </div>
+          <div class="section" id="count-uint32-t-in">
+            <h3>
+              <a class="toc-backref" href="#id83"><tt class="docutils literal">count</tt> (<tt class="docutils literal">uint32_t</tt>) [IN]</a>
+            </h3>
+            <p>
+追加するdatatypeのデータの個数。</p>
+          </div>
+          <div class="section" id="disp-opal-ptrdiff-type-in">
+            <h3>
+              <a class="toc-backref" href="#id84"><tt class="docutils literal">disp</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>) [IN]</a>
+            </h3>
+            <p>
+追加するdatatypeの先頭データのdisplacement。</p>
+          </div>
+          <div class="section" id="extent-opal-ptrdiff-type-in">
+            <h3>
+              <a class="toc-backref" href="#id85"><tt class="docutils literal">extent</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>) [IN]</a>
+            </h3>
+            <p>
+追加するdatatypeのデータのextent。</p>
+          </div>
+          <div class="section" id="return-int32-t">
+            <h3>
+              <a class="toc-backref" href="#id86">return (<tt class="docutils literal">int32_t</tt>)</a>
+            </h3>
+            <dl class="docutils">
+              <dt>
+                <tt class="docutils literal">OPAL_SUCCESS</tt>
+              </dt>
+              <dd>
+成功。</dd>
+              <dt>
+                <tt class="docutils literal">OPAL_ERROR</tt>
+              </dt>
+              <dd>
+エラー。</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="section" id="opal-datatype-clone">
+          <h2>
+            <a class="toc-backref" href="#id87">
+              <tt class="docutils literal">opal_datatype_clone</tt>
+            </a>
+          </h2>
+          <p>
+datatypeを複製する。</p>
+          <div class="section" id="src-type-opal-datatype-t-in">
+            <h3>
+              <a class="toc-backref" href="#id88"><tt class="docutils literal">src_type</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN]</a>
+            </h3>
+            <p>
+複製元のdatatype。</p>
+          </div>
+          <div class="section" id="dest-type-opal-datatype-t-in-out">
+            <h3>
+              <a class="toc-backref" href="#id89"><tt class="docutils literal">dest_type</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+            </h3>
+            <p>
+複製先のdatatype。</p>
+            <p>
+あらかじめ <tt class="docutils literal">ompi_datatype_create</tt> 関数で作成しておく必要がある。</p>
+            <p>
+以下のように複製される。</p>
+            <ul class="simple">
+              <li><tt class="docutils literal"><span class="pre">opal_datatype_t::id</span></tt> は複製元と同じになる。</li>
+              <li><tt class="docutils literal"><span class="pre">opal_datatype_t::flag</span></tt> から <tt class="docutils literal">OPAL_DATATYPE_FLAG_PREDEFINED</tt> フラグは落とされる。</li>
+              <li><tt class="docutils literal"><span class="pre">opal_datatype_t::desc.desc</span></tt> は配列が複製される。</li>
+              <li><tt class="docutils literal"><span class="pre">opal_datatype_t::opt_desc.desc</span></tt> はメモリが新規に確保されて配列が複製される。</li>
+            </ul>
+          </div>
+          <div class="section" id="id12">
+            <h3>
+              <a class="toc-backref" href="#id90">return (<tt class="docutils literal">int32_t</tt>)</a>
+            </h3>
+            <dl class="docutils">
+              <dt>
+                <tt class="docutils literal">OPAL_SUCCESS</tt>
+              </dt>
+              <dd>
+成功。</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="section" id="opal-datatype-resize">
+          <h2>
+            <a class="toc-backref" href="#id91">
+              <tt class="docutils literal">opal_datatype_resize</tt>
+            </a>
+          </h2>
+          <p>
+datatypeのLBとUBを変更する。</p>
+          <div class="section" id="type-opal-datatype-t-in-out">
+            <h3>
+              <a class="toc-backref" href="#id92"><tt class="docutils literal">type</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+            </h3>
+            <p>
+datatype。</p>
+          </div>
+          <div class="section" id="lb-opal-ptrdiff-type-in">
+            <h3>
+              <a class="toc-backref" href="#id93"><tt class="docutils literal">lb</tt> (<tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt>) [IN]</a>
+            </h3>
+            <p>
+LB。</p>
+          </div>
+          <div class="section" id="id13">
+            <h3>
+              <a class="toc-backref" href="#id94"><tt class="docutils literal">extent</tt><tt class="docutils literal">OPAL_PTRDIFF_TYPE</tt> [IN]</a>
+            </h3>
+            <p>
+extent。</p>
+          </div>
+          <div class="section" id="id14">
+            <h3>
+              <a class="toc-backref" href="#id95">return (<tt class="docutils literal">int32_t</tt>)</a>
+            </h3>
+            <dl class="docutils">
+              <dt>
+                <tt class="docutils literal">OPAL_SUCCESS</tt>
+              </dt>
+              <dd>
+成功。</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="section" id="opal-datatype-commit">
+          <h2>
+            <a class="toc-backref" href="#id96">
+              <tt class="docutils literal">opal_datatype_commit</tt>
+            </a>
+          </h2>
+          <p>
+datatypeをcommitする。</p>
+          <p>
+具体的には以下を行う。</p>
+          <ul class="simple">
+            <li><tt class="docutils literal"><span class="pre">opal_datatype_t::flags</span></tt> に <tt class="docutils literal">OPAL_DATATYPE_FLAG_COMMITED</tt> フラグを設定する。</li>
+            <li><tt class="docutils literal"><span class="pre">opal_datatype_t::desc.desc</span></tt> 配列の最後の要素(<tt class="docutils literal">ddt_endloop_desc_t</tt>)の各フィールドを設定する。</li>
+            <li><tt class="docutils literal"><span class="pre">opal_datatype_t::opt_desc</span></tt> を設定する。</li>
+          </ul>
+          <div class="section" id="pdata-opal-datatype-t-in-out">
+            <h3>
+              <a class="toc-backref" href="#id97"><tt class="docutils literal">pData</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+            </h3>
+            <p>
+commitするdatatype。</p>
+          </div>
+          <div class="section" id="id15">
+            <h3>
+              <a class="toc-backref" href="#id98">return (<tt class="docutils literal">int32_t</tt>)</a>
+            </h3>
+            <dl class="docutils">
+              <dt>
+                <tt class="docutils literal">OPAL_SUCCESS</tt>
+              </dt>
+              <dd>
+commit完了。</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="section" id="opal-datatype-copy-content-same-ddt">
+          <h2>
+            <a class="toc-backref" href="#id99">
+              <tt class="docutils literal">opal_datatype_copy_content_same_ddt</tt>
+            </a>
+          </h2>
+          <p>
+複写元メモリ領域 <tt class="docutils literal">source_base</tt> にあるdatatype <tt class="docutils literal">datatype</tt> の個数 <tt class="docutils literal">count</tt> のデータを、複写先メモリ領域 <tt class="docutils literal">destination_base</tt> に同じdatatypeで複写する。</p>
+          <p>
+複写元メモリ領域と複写先メモリ領域には重なり(overlap)が合ってもよい。</p>
+          <div class="section" id="datatype-opal-datatype-t-in-out">
+            <h3>
+              <a class="toc-backref" href="#id100"><tt class="docutils literal">datatype</tt> (<tt class="docutils literal">opal_datatype_t *</tt>) [IN/OUT]</a>
+            </h3>
+            <p>
+複写元と複写先のdatatype。</p>
+          </div>
+          <div class="section" id="count-int32-t-in">
+            <h3>
+              <a class="toc-backref" href="#id101"><tt class="docutils literal">count</tt> (<tt class="docutils literal">int32_t</tt>) [IN]</a>
+            </h3>
+            <p>
+データの個数。</p>
+          </div>
+          <div class="section" id="destination-base-char-out">
+            <h3>
+              <a class="toc-backref" href="#id102"><tt class="docutils literal">destination_base</tt> (<tt class="docutils literal">char *</tt>) [OUT]</a>
+            </h3>
+            <p>
+複写先メモリ領域の開始アドレス。</p>
+          </div>
+          <div class="section" id="source-base-char-in">
+            <h3>
+              <a class="toc-backref" href="#id103"><tt class="docutils literal">source_base</tt> (<tt class="docutils literal">char *</tt>) [IN]</a>
+            </h3>
+            <p>
+複写元メモリ領域の開始アドレス。</p>
+          </div>
+          <div class="section" id="id16">
+            <h3>
+              <a class="toc-backref" href="#id104">return (<tt class="docutils literal">int32_t</tt>)</a>
+            </h3>
+            <dl class="docutils">
+              <dt>0</dt>
+              <dd>
+複写完了。</dd>
+              <dt>1</dt>
+              <dd><tt class="docutils literal">count</tt> が0のため複写不要。</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -11,9 +11,9 @@ Open MPIのソース読みのメモ
 
 - API
 
-  * `opal_datatype (Open MPI 2.0) <./api.opal_datatype.ja.xhtml>`_
-  * `opal_convertor (Open MPI 2.0) <./api.opal_convertor.ja.xhtml>`_
-  * `ompi_datatype (Open MPI 2.0) <./api.ompi_datatype.ja.xhtml>`_
+  * `opal_datatype (Open MPI 2.0) <./v2.0/api.opal_datatype.ja.xhtml>`_
+  * `opal_convertor (Open MPI 2.0) <./v2.0/api.opal_convertor.ja.xhtml>`_
+  * `ompi_datatype (Open MPI 2.0) <./v2.0/api.ompi_datatype.ja.xhtml>`_
 
 - クラス図
 

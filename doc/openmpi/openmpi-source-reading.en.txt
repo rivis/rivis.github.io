@@ -12,9 +12,9 @@ is also available.
 
 - API
 
-  * `opal_datatype (Open MPI 2.0) <./api.opal_datatype.ja.xhtml>`_ (Japanese)
-  * `opal_convertor (Open MPI 2.0) <./api.opal_convertor.ja.xhtml>`_ (Japanese)
-  * `ompi_datatype (Open MPI 2.0) <./api.ompi_datatype.ja.xhtml>`_ (Japanese)
+  * `opal_datatype (Open MPI 2.0) <./v2.0/api.opal_datatype.ja.xhtml>`_ (Japanese)
+  * `opal_convertor (Open MPI 2.0) <./v2.0/api.opal_convertor.ja.xhtml>`_ (Japanese)
+  * `ompi_datatype (Open MPI 2.0) <./v2.0/api.ompi_datatype.ja.xhtml>`_ (Japanese)
 
 - Class Diagrams
 
