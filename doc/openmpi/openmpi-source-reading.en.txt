@@ -12,27 +12,19 @@ is also available.
 
 - API
 
-  * Open MPI 2.0
-
-    + `opal_datatype <./api.opal_datatype.ja.xhtml>`_ (Japanese)
-    + `opal_convertor <./api.opal_convertor.ja.xhtml>`_ (Japanese)
-    + `ompi_datatype <./api.ompi_datatype.ja.xhtml>`_ (Japanese)
+  * `opal_datatype (Open MPI 2.0) <./api.opal_datatype.ja.xhtml>`_ (Japanese)
+  * `opal_convertor (Open MPI 2.0) <./api.opal_convertor.ja.xhtml>`_ (Japanese)
+  * `ompi_datatype (Open MPI 2.0) <./api.ompi_datatype.ja.xhtml>`_ (Japanese)
 
 - Class Diagrams
 
-  * Open MPI 2.0
+  * `process (Open MPI 2.0) <./v2.0/figures/class.proc.svg>`_
+  * `datatype (Open MPI 2.0) <./v2.0/figures/class.datatype.svg>`_
 
-    + `process <./v2.0/figures/class.proc.svg>`_
-    + `datatype <./v2.0/figures/class.datatype.svg>`_
+- Call Sequences of Functions
 
-- Call sequences of functions
+  * `MPI_INIT (Open MPI 2.0) <./v2.0/mpi-init-sequence.txt>`_
 
-  * Open MPI 2.0
+- Communication Protocols
 
-    + `MPI_INIT <./v2.0/mpi-init-sequence.txt>`_
-
-- Protocols
-
-  * Open MPI 2.1
-
-    + `ob1 PML <./v2.1/pml-ob1-protocols.en.xhtml>`_
+  * `ob1 PML (Open MPI 2.1) <./v2.1/pml-ob1-protocols.en.xhtml>`_
