@@ -1,0 +1,602 @@
+################################################################
+Communication Protocols in the ob1 PML
+################################################################
+
+.. style: docutils-report
+
+In `Open MPI <https://www.open-mpi.org/>`_, the **PML** framework
+has charge of point-to-point communications.
+**ob1** is one of components in the PML framework which executes
+communications utilizing **BTL** component(s).
+
+The ob1 PML implements some communication protocols and selects
+a protocol for a point-to-point communication based on several
+conditions such as the messeage to send and underlying BTL
+component(s).
+
+This document describes the communication protocols and
+their procedures in the ob1 PML as of Open MPI 2.1.
+
+.. contents::
+
+Types of Protocols
+==================
+
+Protocols implemented in the ob1 PML is broadly categorized as
+**eager protocol** and **rendezvous protocol**.
+
+There is only one protocol in the eager protocol: **Eager Send**.
+The ob1 PML has three implementations for Eager Send.
+Though they are same in communication protocol level,
+I describe them separately in this document.
+
+- **Eager Send (Immediate)**
+- **Eager Send (Prepared)**
+- **Eager Send (Allocated)**
+
+There are several protocols in the rendezvous protocol.
+
+- **RDMA Direct Put**
+- **RDMA Direct Get**
+- **Send/Receive Pipeline**
+- **RDMA Pipeline**
+- **Buffered Pipeline**
+
+Some of these protocol names are cited from
+`FAQ of Open MPI <https://www.open-mpi.org/faq/?category=openfabrics>`_
+and remains are defined by me.
+
+Protocol Selection
+==================
+
+Some protocols cannot be used for non-contiguous buffer.
+Some protocols cannot be used on certain BTL components.
+Specific types of protocols must be used for a given communication
+mode (defined in the MPI Standard: standard, bufferd, synchronous,
+and ready).
+The fastest protocol varies based on a message size.
+So a protocol to use is selected per message.
+Furthermore, a protocol cannot be determined only on a sending
+process nor on a receiving process because datatypes passed
+to the ``MPI_SEND`` and the ``MPI_RECV`` may not be equivalent.
+
+A candidate protocol is selected on a sending process and
+the information is sent to a receiving process.
+Once the receiving process receives the information,
+the receiving process check whether the protocol is
+acceptable and determine a final protocol.
+
+The selection procedure on a sending process is described below.
+
+::
+
+  if ((standard_mode || buffered_mode || ready_mode) &&
+      btl_sendi && data_size <= 256)
+    [Eager Send (Immediate)]
+  else
+    if (data_size <= btl_eager_limit - sizeof(mca_pml_ob1_hdr_t))
+      if (standard_mode || ready_mode)
+        if (data_size != 0 && btl_send_inplace)
+          # mca_pml_ob1_send_request_start_prepare
+          [Eager Send (Prepared)]
+        else
+          # mca_pml_ob1_send_request_start_copy
+          if (btl_sendi)
+            [Eager Send (Immediate)]
+          else
+            [Eager Send (Allocated)]
+      if (buffered_mode)
+        # mca_pml_ob1_send_request_start_copy
+        if (btl_sendi)
+          [Eager Send (Immediate)]
+        else
+          [Eager Send (Allocated)]
+      if (synchronous_mode)
+        # mca_pml_ob1_send_request_start_rndv(flags = 0)
+        [Send/Receive Pipeline]
+    else
+      if (buffered_mode)
+        # mca_pml_ob1_send_request_start_buffered
+        [Buffered Pipeline]
+      if (contiguous_buffer)
+        if (btl_rdma &&
+            (leave_pinned || ! (btl_flags & PUT) ||
+             data_size <= btl_min_rdma_pipeline_size))
+          # mca_pml_ob1_send_request_start_rdma
+          if (! btl_get)
+            # mca_pml_ob1_send_request_start_rndv(flags = CONTIG | PIN)
+            [RDMA Direct Put]
+          else
+            [RDMA Direct Get]
+        else
+          # mca_pml_ob1_send_request_start_rndv(flags = CONTIG)
+          [RDMA Pipeline]
+      else
+        # mca_pml_ob1_send_request_start_rndv(flags = 0)
+        [Send/Receive Pipeline]
+
+Protocol Details
+================
+
+In code snippets and figures in this chapter, the prefix
+``mca_pml_ob1_`` of function names are omitted.
+
+Eager Protocols
+---------------
+
+Eager protocols transfers a message in the send/receive semantics.
+
+The ob1 PML has three implementations for Eager Send.
+They are same in communication protocol level but has differences
+in procedure how they call BTL functions on the sending process.
+
+Eager Send (Immediate)
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. figure:: figures/eager-send-immediate.svg
+
+A. The sending process sends a whole message with a MATCH header
+   via BTL ``btl_sendi`` function and marks the send request as
+   completed on return of the the function. ::
+
+    btl_sendi(flags = PRIORITY | BTL_OWNERSHIP, tag = MATCH, pml_flags = 0)
+    send_request_pml_complete
+
+B. The receiving process receives the message, unpacks the message
+   from the BTL receive buffer to the user receive buffer, and
+   marks the receive request as completed. ::
+
+    opal_convertor_unpack
+    recv_request_pml_complete
+
+Eager Send (Prepared)
+^^^^^^^^^^^^^^^^^^^^^
+
+.. figure:: figures/eager-send-prepared.svg
+
+A. The sending process passes the user send buffer to a BTL module
+   via BTL ``btl_prepare_src`` function and sends a whole message
+   with a MATCH header via BTL ``btl_send`` function. ::
+
+    btl_prepare_src(size = data_size, flags = PRIORITY | BTL_OWNERSHIP)
+    btl_send(tag = MATCH, pml_flags = 0)
+
+B. When the Send operation has completed locally on the sending
+   process, the callback function is called by the BTL module.
+   In this calllback function, the sending process marks the send
+   request as completed. ::
+
+    send_request_pml_complete
+
+C. The receiving process receives the message, unpacks the message
+   from the BTL receive buffer to the user receive buffer, and
+   marks the receive request as completed. ::
+
+    opal_convertor_unpack
+    recv_request_pml_complete
+
+Eager Send (Allocated)
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. figure:: figures/eager-send-allocated.svg
+
+A. The sending process allocates a BTL send buffer via BTL ``btl_alloc``
+   function, packs the message from the user send buffer to the
+   BTL send buffer, and sends a whole message with a MATCH header
+   via BTL ``btl_send`` function. ::
+
+    btl_alloc(size = hdr_size + data_size, flags = PRIORITY | BTL_OWNERSHIP)
+    opal_convertor_pack(size = data_size)
+    btl_send(tag = MATCH, pml_flags = 0)
+
+B. When the Send operation has completed locally on the sending
+   process, the callback function is called by the BTL module.
+   In this calllback function, the sending process marks the send
+   request as completed. ::
+
+    send_request_pml_complete
+
+C. The receiving process receives the message, unpacks the message
+   from the BTL receive buffer to the user receive buffer, and
+   marks the receive request as completed. ::
+
+    opal_convertor_unpack
+    recv_request_pml_complete
+
+Rendezvous Protocols
+--------------------
+
+RDMA Direct Put
+^^^^^^^^^^^^^^^
+
+The RDMA Direct Put protocol transfers a message from a user
+send buffer to a user receive buffer directly using the RDMA
+Write (Put) operation executed by the sending process.
+
+This protocol can be used only if BTL module(s) (network interface(s))
+which are capable of the RDMA Write operation are available and the
+user send/receive buffers are contiguous.
+
+When more than one BTL modules are available to the peer, up to
+``max_rdma_per_request`` BTL modules are used.
+In this case, the message is splitted for used BTL modules.
+
+.. figure:: figures/rdma-direct-put.svg
+
+A. The sending process registers the memory to used BTL modules
+   and sends a control message with a RNDV header. ::
+
+    for used BTL modules:
+        btl_register_mem(flags = REMOTE_READ)
+    btl_alloc(size = hdr_size, flags = PRIORITY | BTL_OWNERSHIP)
+    btl_send(tag = RNDV, pml_flags = CONTIG | PIN | SIGNAL)
+
+C. The receiving process receives the RNDV control message,
+   registers the memory to used BTL modules, and sends back
+   control messages with PUT headers.
+   The number of PUT control messages to send is same as
+   the number of BTL modules to use.
+   Each PUT control message contains the registration data. ::
+
+    for used BTL modules:
+        btl_register_mem(flags = REMOTE_WRITE)
+        btl_alloc(size = hdr_size + reg_size,
+                  flags = PRIORITY | BTL_OWNERSHIP | SEND_ALWAYS_CALLBACK | SIGNAL)
+        btl_send(tag = PUT, pml_flags = ACK)
+
+E. The sending process receives the PUT control message and
+   starts the RDMA Write operation using the corresponding BTL
+   module.
+   The RDMA Write operation is executed once per received PUT
+   control message. ::
+
+    per PUT control message:
+        btl_put(size = rdma_length)
+
+F. Each time the RDMA Write operation has completed locally on the
+   sending process, the callback function is called by the BTL module.
+   In this calllback function, the sending process sends a control
+   message with a FIN header and deregisters the memory from the BTL
+   module.
+   If all RDMA Write operations complete, the send request is
+   marked as completed. ::
+
+    per RDMA Write operation completion:
+        btl_alloc(size = hdr_size, flags = PRIORITY | BTL_OWNERSHIP | SIGNAL)
+        btl_send(tag = FIN, pml_flags = 0)
+        btl_deregister_mem
+    if all completed:
+        send_request_pml_complete
+
+H. The receiving process receives the FIN control message and
+   call the callback function which is set when the PUT control
+   message is sent.
+
+I. In the callbaqck function, the receiving process deregister the
+   memory from the BTL module.
+   If all RDMA Write operations complete, the receive request is
+   marked as completed. ::
+
+    per FIN control message:
+        btl_deregister_mem
+    if all completed:
+        recv_request_pml_complete
+
+In (C), if the user receve buffer is not contiguous,
+the receive process sends back a control messages with an ACK
+header and the protocol fallbacks to the Send/Receive Pipeline.
+
+RDMA Direct Get
+^^^^^^^^^^^^^^^
+
+The RDMA Direct Get protocol transfers a message from a user
+send buffer to a user receive buffer directly using the RDMA Read
+(Get) operation executed by the receiving process.
+
+This protocol can be used only if BTL module(s) (network interface(s))
+which are capable of the RDMA Read operation are available and the
+user send/receive buffers are contiguous.
+
+When more than one BTL modules are available to the peer, up to
+``max_rdma_per_request`` BTL modules are used.
+In this case, the message is splitted for used BTL modules.
+
+.. figure:: figures/rdma-direct-get.svg
+
+A. The sending process registers the memory to used BTL modules
+   and sends a control message with a RGET header.
+   The RGET control message contains all the registration data. ::
+
+    for used BTL modules:
+        btl_register_mem(flags = REMOTE_READ)
+    btl_alloc(size = hdr_size + reg_size,
+              flags = PRIORITY | BTL_OWNERSHIP | SIGNAL)
+    btl_send(tag = RGET, pml_flags = CONTIG | PIN)
+
+C. The receiving process receives the RGET control message,
+   registers the memory to used BTL modules, and starts
+   starts the RDMA Read operation using the used BTL module(s).
+   The number of started the RDMA Read operation is same as the
+   number of BTL modules to use. ::
+
+    for used BTL modules:
+        btl_register_mem(flags = LOCAL_WRITE | REMOTE_WRITE)
+        btl_get(size = rdma_length)
+
+D. Each time the the RDMA Read operation has completed on the
+   receiving process, the callback function is called by the BTL
+   module.
+   In this calllback function, the receiving process sends a
+   control message with a FIN header and deregisters the memory
+   from the BTL module.
+   If all RDMA Read operations complete, the send request is
+   marked as completed. ::
+
+    per RDMA Write operation completion:
+        btl_alloc(size = hdr_size, flags = PRIORITY | BTL_OWNERSHIP | SIGNAL)
+        btl_send(tag = FIN, pml_flags = 0)
+        btl_deregister_mem
+    if all completed:
+        recv_request_pml_complete
+
+F. The sending process receives the FIN control message and
+   calls the callback function which is set when the RGET control
+   message is sent.
+
+G. In the callbaqck function, the receiving process deregisters
+   the memory from the BTL module.
+   If all RDMA Read operations complete, the send request is
+   marked as completed. ::
+
+    per FIN control message:
+        btl_deregister_mem
+    if all completed:
+        send_request_pml_complete
+
+In (C), if the user receve buffer is not contiguous,
+the receive process sends back a control message with an ACK
+header and the protocol fallbacks to the Send/Receive Pipeline.
+
+Send/Receive Pipeline
+^^^^^^^^^^^^^^^^^^^^^
+
+The Send/Receive Pipeline protocol transfers a message in a
+pipeline manner.
+The message is splitted into fragments of ``btl_max_send_size`` bytes.
+Each fragment is transfered in the send/receive semantics.
+This means the receiving process must unpack the received fragments
+from the BTL receive buffer to the user receive buffer and
+in many cases the sending process must pack the fragment to the
+BTL send buffer from the user send buffer.
+The number of in-flight fragments at a time is throttled to
+``send_pipeline_depth`` at the sending process.
+
+This protocol can be used even if the user send/receive buffers
+are not contiguous.
+
+When more than one BTL modules are available to the peer, up to
+``max_send_per_range`` BTL modules are used.
+
+.. figure:: figures/send-receive-pipeline.svg
+
+A. The sending process sends a first fragment with a RNDV header.
+   The size of the first fragment is the smaller of ``eager_limit``
+   and ``rndv_eager_limit``. ::
+
+    btl_prepare_src(size = min(eager_limit, rndv_eager_limit),
+                    flags = PRIORITY | BTL_OWNERSHIP | SIGNAL)
+    btl_send(tag = RNDV, pml_flags = SIGNAL)
+
+C. The receiving process receives the first RNDV fragment, unpacks
+   the fragment to the user receive buffer, and sends back a control
+   message with an ACK header. ::
+
+    opal_convertor_unpack
+    btl_alloc(size = hdr_size,
+              flags = PRIORITY | BTL_OWNERSHIP | SEND_ALWAYS_CALLBACK | SIGNAL)
+    btl_send(tag = ACK, pml_flags = 0)
+
+E. The sending process receives the ACK control message and
+   sends up to ``send_pipeline_depth`` next fragments with
+   FRAG headers.
+   The size of a fragment is ``btl_max_send_size``. ::
+
+    per fragment:
+        btl_prepare_src(size = max_send_size,
+                        flags = BTL_OWNERSHIP | SEND_ALWAYS_CALLBACK | SIGNAL)
+        btl_send(tag = FRAG, pml_flags = 0)
+
+F. Each time the Send operation has completed locally on the
+   sending process, the callback function is called by the BTL
+   module.
+   In this calllback function, the sending process sends a next
+   fragment with a FRAG header.
+   If all fragments are sent, the send request is marked as
+   completed. ::
+
+    per Send operation completion:
+        btl_prepare_src(size = max_send_size,
+                        flags = BTL_OWNERSHIP | SEND_ALWAYS_CALLBACK | SIGNAL)
+        btl_send(tag = FRAG, pml_flags = 0)
+    if all completed:
+        send_request_pml_complete
+
+G. The receiving process receives the next FRAG fragment and unpacks
+   the fragment to the user receive buffer.
+   If all fragments are received, the receive request is marked
+   as completed. ::
+
+    per FRAG control message:
+        opal_convertor_unpack
+    if all complete:
+        recv_request_pml_complete
+
+RDMA Pipeline
+^^^^^^^^^^^^^
+
+The RDMA Pipeline protocol is a mixture of the RDMA Direct Put
+protocol and the Send/Receive Pipeline protocol.
+
+The message is roughly splitted into three segments.
+The first segment of ``min(eager_limit, rndv_eager_limit)`` bytes
+is transfered with a RNDV header.
+The last segment of ``btl_pipeline_send_length`` bytes is transfered
+in a pipeline of send/receive semantics.
+The remaining intermediate segment is transfered in a pipeline of
+RDMA Write.
+
+In the send/receive pipeline part, the segment is splitted into
+fragments of ``btl_max_send_size`` bytes.
+The number of in-flight fragments at a time is throttled to
+``send_pipeline_depth`` at the sending process.
+
+In the RDMA pipeline part, the segment is splitted into
+fragments of ``btl_rdma_pipeline_frag_size`` bytes.
+
+.. figure:: figures/rdma-pipeline.svg
+
+A. The sending process sends a first fragment (the first segment)
+   with a RNDV header.
+   The size of the first fragment is the smaller of ``eager_limit``
+   and ``rndv_eager_limit``. ::
+
+    btl_prepare_src(size = min(eager_limit, rndv_eager_limit),
+                    flags = PRIORITY | BTL_OWNERSHIP | SIGNAL)
+    btl_send(tag = RNDV, pml_flags = CONTIG)
+
+C. The receiving process receives the RNDV fragment, unpacks
+   the fragment to the user receive buffer, and sends back a
+   control messages with an ACK header.
+   And the receiving process splits the receive buffer for the
+   second segment into fragments of ``btl_rdma_pipeline_frag_size``
+   bytes, registers the memory fragments to used BTL modules, and
+   sends back control messages with PUT headers.
+   The number of PUT control messages to send is same as
+   the number of the fragments.
+   Each PUT control message contains the registration data. ::
+
+    btl_alloc(size = hdr_size,
+              flags = PRIORITY | BTL_OWNERSHIP | SEND_ALWAYS_CALLBACK | SIGNAL)
+    btl_send(tag = ACK, pml_flags = NORDMA)
+    per fragment of the third segment:
+        btl_register_mem(flags = REMOTE_WRITE)
+        btl_alloc(size = hdr_size + reg_size,
+                  flags = PRIORITY | BTL_OWNERSHIP | SEND_ALWAYS_CALLBACK | SIGNAL)
+        btl_send(tag = PUT, pml_flags = 0)
+
+F. The sending process receives the ACK control message and
+   sends up to ``send_pipeline_depth`` next fragments with
+   FRAG headers.
+   This procedure is same as E. of the Send/Receive Pipeline
+   protocol. ::
+
+    per fragment of the second segment:
+        btl_prepare_src(size = max_send_size,
+                        flags = BTL_OWNERSHIP | SEND_ALWAYS_CALLBACK | SIGNAL)
+        btl_send(tag = FRAG, pml_flags = 0)
+
+G. The sending process receives the PUT control message,
+   registers the memory to the BTL module to use for the fragment,
+   and starts the RDMA Write operation using the BTL module.
+   The differences from the procedure E. of the RDMA Direct Put
+   protocol are that the memory is regstered to the used BTL module
+   in this procedure rather than in the procedure A. and only the
+   memory of the fragment is registered rather than the memory
+   of the entire message. ::
+
+    per PUT control message:
+        btl_register_mem(flags = REMOTE_READ)
+        btl_put(size = rdma_length)
+
+H. Each time the Send operation of the FRAG fragment has completed
+   locally on the sending process, the callback function is called
+   by the BTL module.
+   In this calllback function, the sending process sends a next
+   fragment with a FRAG header.
+   If all FRAG fragments are sent and all RDMA Write operations
+   complete, the send request is marked as completed.
+   This procedure is same as F. of the Send/Receive Pipeline
+   protocol. ::
+
+    per Send operation of completion:
+        btl_prepare_src(size = max_send_size,
+                        flags = BTL_OWNERSHIP | SEND_ALWAYS_CALLBACK | SIGNAL)
+        btl_send(tag = FRAG, pml_flags = 0)
+    if all completed:
+        send_request_pml_complete
+
+F. Each time the RDMA Write operation has completed locally on the
+   sending process, the callback function is called by the BTL module.
+   In this calllback function, the sending process sends a control
+   message with a FIN header and deregisters the memory from the BTL
+   module.
+   If all FRAG fragments are sent and all RDMA Write operations
+   complete, the send request is marked as completed.
+   This procedure is same as F. of the RDMA Direct Put protocol. ::
+
+    per RDMA Write operation completion:
+        btl_alloc(size = hdr_size, flags = PRIORITY | BTL_OWNERSHIP | SIGNAL)
+        btl_send(tag = FIN, pml_flags = 0)
+        btl_deregister_mem
+    if all completed:
+        send_request_pml_complete
+
+K. The receiving process receives the next FRAG fragment and unpacks
+   the fragment to the user receive buffer.
+   If all FRAG fragments and all FIN control messages are received,
+   the receive request is marked as completed. ::
+   This procedure is same as G. of the Send/Receive Pipeline
+   protocol. ::
+
+    per FRAG control message:
+        opal_convertor_unpack
+    if all complete:
+        recv_request_pml_complete
+
+H. The receiving process receives the FIN control message and
+   call the callback function which is set when the PUT control
+   message is sent.
+   This procedure is same as H. of the RDMA Direct Put protocol.
+
+I. In the callbaqck function, the receiving process deregister the
+   memory from the BTL module.
+   If all RDMA Write operations complete, the receive request is
+   marked as completed.
+   This procedure is same as I. of the RDMA Direct Put protocol. ::
+
+    per FIN control message:
+        btl_deregister_mem
+    if all completed:
+        recv_request_pml_complete
+
+Buffered Pipeline
+^^^^^^^^^^^^^^^^^
+
+The Buffered Pipeline protocol is almost same as the Send/Receive
+Pipeline protocol. The differences from the Send/Receive Pipeline
+protocol are the following two in the procedure A on the sending
+process.
+
+- The message is packed into the buffer provided by the
+  ``MPI_BUFFER_ATTACH`` routine. In the procedure E. and F.,
+  fragments are transfered from this buffer.
+- The MPI communication operation is marked as complete.
+  So the ``MPI_BSEND`` routine call or the ``MPI_WAIT`` routine
+  call corresponding to the ``MPI_IBSEND`` routine call returns
+  after the completion of the procedure A. regardless of the
+  procedures after the procedure A.
+
+.. figure:: figures/buffered-pipeline.svg
+
+A. The sending process sends a first fragment with a RNDV header.
+   The size of the first fragment is the smaller of ``eager_limit``
+   and ``rndv_eager_limit``.
+   The remaining part of the message is packed into the buffer.
+   The request is marked as complete at MPI level. ::
+
+    btl_alloc(size = hdr_size + min(eager_limit, rndv_eager_limit),
+              flags = PRIORITY | BTL_OWNERSHIP | SIGNAL)
+    opal_convertor_pack(size = min(eager_limit, rndv_eager_limit))
+    opal_convertor_pack(size = data_size - min(eager_limit, rndv_eager_limit))
+    btl_send(tag = RNDV, pml_flags = 0)
+    send_request_mpi_complete
