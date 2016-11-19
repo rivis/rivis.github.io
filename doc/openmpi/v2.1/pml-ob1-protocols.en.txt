@@ -600,3 +600,5 @@ A. The sending process sends a first fragment with a RNDV header.
     opal_convertor_pack(size = data_size - min(eager_limit, rndv_eager_limit))
     btl_send(tag = RNDV, pml_flags = 0)
     send_request_mpi_complete
+
+.. header:: Back to: `[Notes on Open MPI Source Reading] <../openmpi-source-reading.en.xhtml>`_
