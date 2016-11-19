@@ -1,0 +1,1026 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+    <title>A64のアセンブリコードの読み方</title>
+    <link rel="stylesheet" href="../../css/docutils-report.css" type="text/css" />
+  </head>
+  <body>
+    <div class="document" id="a64">
+      <h1 class="title">A64のアセンブリコードの読み方</h1>
+<!-- style: docutils-report -->
+      <div class="section" id="id1">
+        <h1>はじめに</h1>
+        <p>
+C言語などで低レベルのプログラムを書いていたりすると、デバッグやチューニングのためにアセンブリコードを読まないとならないことがでてくる。</p>
+        <p>
+たとえば、GCCでは、コンパイル時に <tt class="docutils literal"><span class="pre">-S</span></tt> オプションを付けることによってアセンブリ言語のソースファイル(<tt class="docutils literal">*.s</tt>)が出力され、そこに埋め込まれたコメントからC言語などのソースファイルの行との対応関係が分かる。また、 <tt class="docutils literal"><span class="pre">-g</span></tt> オプションを付けてコンパイルすると出力された実行ファイルなどにデバッグ情報が付加され、GDBでデバッグするときにC言語などのソースファイルの行との対応関係が分かる。</p>
+        <p>
+ここでは、ソースファイルから再コンパイルせずに <tt class="docutils literal">objdump</tt>
+コマンドなどで出力されたアセンブリコードを読み解いていきたい場合、もしくはソースファイルの行レベルではなく演算子レベルでアセンブリコードを読んでいきたい場合を想定して、ARMの命令セットであるA64のアセンブリコードの読み方について入門的に紹介する。</p>
+        <p>
+A64は、ARMv8-Aアーキテクチャ(およびそれ以降)のAArch64実行状態で使われる命令セットである。ARMv8-A, AArch64, A64については、たとえば <a class="reference external" href="http://www.arm.com/ja/products/processors/armv8-architecture.php">ARM社のARMv8アーキテクチャの説明</a>
+を参照。</p>
+        <div class="section" id="id2">
+          <h2>情報源</h2>
+          <p>
+ARMv8-A, AArch64, A64を含むARMアーキテクチャの情報は、
+<a class="reference external" href="http://infocenter.arm.com/">ARM社のARM Infocenter</a> に存在する。特に、ユーザ空間のアプリケーションで動作する一般的なプログラムのアセンブリコードを読むには、以下の文書が参考になるであろう。</p>
+          <dl class="docutils">
+            <dt>
+              <a class="reference external" href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0801e/index.html">ARM Compiler armasm User Guide (英語)</a>
+            </dt>
+            <dd>
+A32、T32、A64のアセンブリ言語の記述や各命令の説明と、その説明に必要な状態(AArch32, AArch64)、レジスタ、条件コードなどの説明がある。</dd>
+            <dt>
+              <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.dui0801cj/index.html">ARM コンパイラ armasm ユーザガイド (日本語)</a>
+            </dt>
+            <dd>
+上記の文書の日本語版。</dd>
+            <dt>
+              <a class="reference external" href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ihi0055c/index.html">Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語)</a>
+            </dt>
+            <dd>
+AArch64のABI (Application Binary Interface)での手続き呼び出しの規約の説明がある。手続き呼び出し時にレジスタをどのように使うかなど。</dd>
+          </dl>
+          <p>
+ただし、上記のリンクは2016年6月時点での最新バージョンへのリンクである。新しいバージョンの文書が存在する場合は、新しい方を参照した方がよい。</p>
+        </div>
+        <div class="section" id="id3">
+          <h2>前提となる知識</h2>
+          <p>
+これ以降の説明では、以下の概念は知っているものとして説明する。</p>
+          <ul class="simple">
+            <li>
+アセンブリ言語 (assembly language)</li>
+            <li>
+レジスタ (register)</li>
+            <li>
+スタック (stack)</li>
+            <li>
+branch, load, store, move</li>
+          </ul>
+        </div>
+      </div>
+      <div class="section" id="id4">
+        <h1>A64の特徴</h1>
+<!-- ToDo: 見出しを変更する -->
+        <div class="section" id="id5">
+          <h2>レジスタセット</h2>
+          <div class="section" id="id6">
+            <h3>汎用レジスタとスタックポインタレジスタ</h3>
+            <p>
+以下では、 <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.dui0801cj/index.html">ARM コンパイラ armasm ユーザガイド</a>
+の説明を引用・要約する。ただし、表現を一部変更している部分がある。</p>
+            <p>
+ユーザ空間のアプリケーションから直接アクセスできるレジスタとして以下がある。</p>
+            <ul class="simple">
+              <li>
+31本の汎用レジスタ(general-purpose register)。レジスタ名はX0からX30。64ビットのうち下位32ビットにはW0からW30のレジスタ名でアクセスできる。</li>
+              <li>
+1本のスタックポインタレジスタ(stack pointer register)。レジスタ名はSP。</li>
+            </ul>
+            <p>
+これらはすべて64ビットのレジスタである。ただし、ほとんどのA64整数命令は、32ビットまたは64ビットレジスタのいずれかで実行できる。レジスタ幅は、レジスタ識別子で判断される。ここで、Wは32ビット、Xは64ビットを意味する。W<em>n</em>およびX<em>n</em>という名前で、 <em>n</em> は範囲0-30 にあり、同じレジスタを参照する。ある命令の32ビット形式を使用する場合、ソースレジスタの上位32ビットは無視され、デスティネーションレジスタの上位32ビットがゼロに設定される。</p>
+            <p>
+W31またはX31という名前のレジスタはない。命令に応じて、レジスタ31はスタックポインタまたはゼロレジスタのいずれかになる。スタックポインタとして使用される場合、SPと呼ぶ。ゼロレジスタとして使用される場合、32ビットコンテキストではWZR、64ビットコンテキストではXZRと呼ぶ。</p>
+            <p>
+サブルーチン呼び出しが実行されたとき、リンクレジスタ(LR)が復帰アドレスを格納する。リターンアドレスがスタックにストアされる場合は、LRを汎用レジスタとして使用することもできる。LRはレジスタ30にマップする。</p>
+            <p>
+AArch64状態で事前宣言されているコアレジスタの名前は以下の通りである。</p>
+            <table border="1" class="docutils">
+              <colgroup>
+                <col width="20%" />
+                <col width="80%" />
+              </colgroup>
+              <thead valign="bottom">
+                <tr>
+                  <th class="head">
+Register names</th>
+                  <th class="head">
+Meaning</th>
+                </tr>
+              </thead>
+              <tbody valign="top">
+                <tr>
+                  <td>
+                    <tt class="docutils literal">
+                      <span class="pre">W0-W30</span>
+                    </tt>
+                  </td>
+                  <td>
+32ビット汎用レジスタ。</td>
+                </tr>
+                <tr>
+                  <td>
+                    <tt class="docutils literal">
+                      <span class="pre">X0-X30</span>
+                    </tt>
+                  </td>
+                  <td>
+64ビット汎用レジスタ。</td>
+                </tr>
+                <tr>
+                  <td>
+                    <tt class="docutils literal">WZR</tt>
+                  </td>
+                  <td>
+32ビットRAZ/WIレジスタ。32ビットコンテキストでゼロレジスタとして使用されるときのレジスタ31の名前。</td>
+                </tr>
+                <tr>
+                  <td>
+                    <tt class="docutils literal">XZR</tt>
+                  </td>
+                  <td>
+64ビットRAZ/WIレジスタ。64ビットコンテキストでゼロレジスタとして使用されるときのレジスタ31の名前。</td>
+                </tr>
+                <tr>
+                  <td>
+                    <tt class="docutils literal">WSP</tt>
+                  </td>
+                  <td>
+32ビットスタックポインタ。32ビットコンテキストでスタックポインタとして使用されるときのレジスタ31の名前。</td>
+                </tr>
+                <tr>
+                  <td>
+                    <tt class="docutils literal">SP</tt>
+                  </td>
+                  <td>
+64ビットスタックポインタ。64ビットコンテキストでスタックポインタとして使用されるときのレジスタ31の名前。</td>
+                </tr>
+                <tr>
+                  <td>
+                    <tt class="docutils literal">LR</tt>
+                  </td>
+                  <td>
+リンクレジスタ。X30と同じ意味。</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="section" id="advanced-simd">
+            <h3>Advanced SIMDレジスタと浮動小数点レジスタ</h3>
+            <p>
+汎用レジスタ・スタックポインタレジスタ以外に、ユーザ空間のアプリケーションから直接アクセスできるレジスタとして、Advanced SIMDレジスタと浮動小数点レジスタも存在する。</p>
+            <p>
+この文書ではAdvanced SIMDレジスタと浮動小数点レジスタおよびそれを扱う命令については説明しない。</p>
+          </div>
+          <div class="section" id="nzcv">
+            <h3>NZCVレジスタ</h3>
+            <p>
+特殊なレジスタとして、条件フラグのコピーを保持するNZCVレジスタがある。</p>
+            <p>
+NZCVレジスタは、 <tt class="docutils literal">CMP</tt> などの比較命令を実行したときにその比較結果に応じて間接的に更新され、 <tt class="docutils literal">B.cond</tt> 命令を実行したときに間接的に参照される。</p>
+            <p>
+NZCVレジスタは、 <tt class="docutils literal">MSR</tt> (Move immediate value to Special Register)命令および <tt class="docutils literal">MRS</tt> (Move general-purpose register to System Register)命令を使用して直接アクセスできるが、通常のプログラムでは直接アクセスしない。</p>
+<!-- ToDo 例を書く -->
+          </div>
+        </div>
+        <div class="section" id="id8">
+          <h2>アドレシングモード</h2>
+          <p>
+以下では、 <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.dui0801cj/index.html">ARM コンパイラ armasm ユーザガイド</a>
+の「6.19 メモリアクセス」の説明を引用・要約する。ただし、表現を一部変更している部分がある。</p>
+          <p>
+多くのロード命令とストア命令では、3つのアドレシングモードがサポートされている。</p>
+          <dl class="docutils">
+            <dt>オフセットアドレシング (offset addressing)</dt>
+            <dd>
+              <p class="first">
+ベースレジスタから取得したアドレスにオフセット値が適用される。その結果は、メモリアクセス用のアドレスとして使用される。ベースレジスタは変更されない。このモードのアセンブリ言語構文は以下のとおり。</p>
+              <pre class="last literal-block">
+[ Rn , offset ]
+</pre>
+            </dd>
+            <dt>プレインデクスアドレシング (pre-indexed addressing)</dt>
+            <dd>
+              <p class="first">
+ベースレジスタから取得したアドレスにオフセット値が適用される。その結果は、メモリアクセス用のアドレスとして使用され、ベースレジスタにライトバックされる。このモードのアセンブリ言語構文は以下のとおり。</p>
+              <pre class="last literal-block">
+[ Rn , offset ]!
+</pre>
+            </dd>
+            <dt>ポストインデクスアドレシング (post-indexed addressing)</dt>
+            <dd>
+              <p class="first">
+ベースレジスタから取得したアドレスが、変更されずに、メモリアクセス用のアドレスとして使用される。そのアドレスにオフセット値が適用され、ベースレジスタにライトバックされる。このモードのアセンブリ言語構文は以下のとおり。</p>
+              <pre class="last literal-block">
+[ Rn ], offset
+</pre>
+            </dd>
+          </dl>
+          <p>
+いずれの場合も、 <tt class="docutils literal">Rn</tt> はベースレジスタで、 <tt class="docutils literal">offset</tt> には以下を指定できる。</p>
+          <ul class="simple">
+            <li>
+イミディエート定数。</li>
+            <li>
+インデクスレジスタ <tt class="docutils literal">Rm</tt> 。</li>
+            <li>
+シフトしたインデクスレジスタ(<tt class="docutils literal">Rm</tt>, <tt class="docutils literal">LSL #shift</tt> など)。</li>
+          </ul>
+<!-- ToDo 例を書く。 -->
+        </div>
+      </div>
+      <div class="section" id="id10">
+        <h1>主要な命令</h1>
+        <div class="section" id="branch-return">
+          <h2>branch/return</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="8%" />
+              <col width="13%" />
+              <col width="23%" />
+              <col width="57%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Mnemonic</th>
+                <th class="head">
+Operand</th>
+                <th class="head">
+Brief Description</th>
+                <th class="head">
+Meaning</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+                  <tt class="docutils literal">B</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">label</tt>
+                </td>
+                <td>
+Branch</td>
+                <td>
+ラベル <tt class="docutils literal">label</tt> にbranchする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">BR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">reg</tt>
+                </td>
+                <td>
+Branch to Register</td>
+                <td>
+レジスタ <tt class="docutils literal">reg</tt> のメモリアドレスにbranchする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">B.cond</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">label</tt>
+                </td>
+                <td>
+Branch conditionally</td>
+                <td>
+NZCVシステムレジスタが条件 <tt class="docutils literal">cond</tt> を満たしたら <tt class="docutils literal">label</tt> にbranchする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">CBZ</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">reg label</tt>
+                </td>
+                <td>
+Compare and Branch on Zero</td>
+                <td>
+レジスタ <tt class="docutils literal">reg</tt> の値が0であれば <tt class="docutils literal">label</tt> にbranchする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">CBNZ</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">reg label</tt>
+                </td>
+                <td>
+Compare and Branch on Nonzero</td>
+                <td>
+レジスタ <tt class="docutils literal">reg</tt> の値が0でなければ <tt class="docutils literal">label</tt> にbranchする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">TBZ</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">reg imm label</tt>
+                </td>
+                <td>
+Test bit and Branch if Zero</td>
+                <td>
+レジスタ <tt class="docutils literal">reg</tt> の値のビット <tt class="docutils literal">imm</tt> が0であれば <tt class="docutils literal">label</tt> にbranchする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">TBNZ</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">reg imm label</tt>
+                </td>
+                <td>
+Test bit and Branch if Nonzero</td>
+                <td>
+レジスタ <tt class="docutils literal">reg</tt> の値のビット <tt class="docutils literal">imm</tt> が0でなければ <tt class="docutils literal">label</tt> にbranchする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">BL</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">label</tt>
+                </td>
+                <td>
+Branch with Link</td>
+                <td>
+ラベル  <tt class="docutils literal">label</tt> のサブルーチンをcallする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">BLR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">reg</tt>
+                </td>
+                <td>
+Branch with Link to Register</td>
+                <td>
+レジスタ <tt class="docutils literal">reg</tt> のメモリアドレスのサブルーチンをcallする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">RET</tt>
+                </td>
+                <td>
+(<tt class="docutils literal">reg</tt>)</td>
+                <td>
+Return from subroutine</td>
+                <td>
+レジスタ <tt class="docutils literal">reg</tt> のメモリアドレスにreturnする。
+<tt class="docutils literal">reg</tt> が無い場合はレジスタX30のメモリアドレスにreturnする。</td>
+              </tr>
+            </tbody>
+          </table>
+          <p><tt class="docutils literal">B.cond</tt> では、その命令より前に実行された <tt class="docutils literal">CMP</tt> などの比較命令によって設定されたNZCVシステムレジスタの値を見てbranchするかどうかが決まる。 <tt class="docutils literal">cond</tt> は以下のいずれかである。</p>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="13%" />
+              <col width="87%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Suffix</th>
+                <th class="head">
+Meaning</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+                  <tt class="docutils literal">EQ</tt>
+                </td>
+                <td>
+Equal</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">NE</tt>
+                </td>
+                <td>
+Not equal</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">CS</tt>
+                </td>
+                <td>
+Carry set (identical to HS)</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">HS</tt>
+                </td>
+                <td>
+Unsigned higher or same (identical to CS)</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">CC</tt>
+                </td>
+                <td>
+Carry clear (identical to LO)</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LO</tt>
+                </td>
+                <td>
+Unsigned lower (identical to CC)</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MI</tt>
+                </td>
+                <td>
+Minus or negative result</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">PL</tt>
+                </td>
+                <td>
+Positive or zero result</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">VS</tt>
+                </td>
+                <td>
+Overflow</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">VC</tt>
+                </td>
+                <td>
+No overflow</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">HI</tt>
+                </td>
+                <td>
+Unsigned higher</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LS</tt>
+                </td>
+                <td>
+Unsigned lower or same</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">GE</tt>
+                </td>
+                <td>
+Signed greater than or equal</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LT</tt>
+                </td>
+                <td>
+Signed less than</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">GT</tt>
+                </td>
+                <td>
+Signed greater than</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LE</tt>
+                </td>
+                <td>
+Signed less than or equal</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">AL</tt>
+                </td>
+                <td>
+Always (this is the default)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="section" id="load">
+          <h2>load</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="6%" />
+              <col width="10%" />
+              <col width="20%" />
+              <col width="64%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Mnemonic</th>
+                <th class="head">
+Operand</th>
+                <th class="head">
+Brief Description</th>
+                <th class="head">
+Meaning</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDRB</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Load Register Byte</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から値(8ビット)をloadし、レジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDRH</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Load Register Halfword</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から値(16ビット)をloadし、レジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Load Register</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から値(32ビットまたは64ビット)をloadし、レジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDRSW</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Load Register Signed Word</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から値(32ビット)をloadし、符号拡張し、レジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDRSH</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Load Register Signed Halfword</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から値(16ビット)をloadし、符号拡張し、レジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDRSB</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Load Register Signed Byte</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から値(8ビット)をloadし、符号拡張し、レジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDP</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst1 dst2 src</tt>
+                </td>
+                <td>
+Load Pair of Registers</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から2つの値(32ビットまたは64ビット)をloadし、レジスタ <tt class="docutils literal">dst1</tt> と <tt class="docutils literal">dst2</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDP</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst1 dst2 src</tt>
+                </td>
+                <td>
+Load Pair of SIMD and FP Registers</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から2つの値をloadし、FP/SIMDレジスタ <tt class="docutils literal">dst1</tt> と <tt class="docutils literal">dst2</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">LDPSW</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst1 dst2 src</tt>
+                </td>
+                <td>
+Load Pair of Registers Signed Word</td>
+                <td>
+メモリアドレス <tt class="docutils literal">src</tt> から2つの値(32ビット)をloadし、符号拡張し、レジスタ <tt class="docutils literal">dst1</tt> と <tt class="docutils literal">dst2</tt> に格納する。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="section" id="store">
+          <h2>store</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="6%" />
+              <col width="11%" />
+              <col width="22%" />
+              <col width="61%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Mnemonic</th>
+                <th class="head">
+Operand</th>
+                <th class="head">
+Brief Description</th>
+                <th class="head">
+Meaning</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+                  <tt class="docutils literal">STRB</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">src dst</tt>
+                </td>
+                <td>
+Store Register Byte</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値(8ビット)をメモリアドレス <tt class="docutils literal">dst</tt> にstoreする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">STRH</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">src dst</tt>
+                </td>
+                <td>
+Store Register Halfword</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値(16ビット)をメモリアドレス <tt class="docutils literal">dst</tt> にstoreする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">STR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">src dst</tt>
+                </td>
+                <td>
+Store Register</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値(32ビットまたは64ビット)をメモリアドレス <tt class="docutils literal">dst</tt> にstoreする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">STP</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">src1 src2 dst</tt>
+                </td>
+                <td>
+Store Pair of Registers</td>
+                <td>
+レジスタ <tt class="docutils literal">src1</tt> と <tt class="docutils literal">src2</tt> の値(64ビットまたは32ビット)をメモリアドレス <tt class="docutils literal">dst</tt> にstoreする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">STP</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">src1 src2 dst</tt>
+                </td>
+                <td>
+Store Pair of SIMD and FP Registers</td>
+                <td>
+FP/SIMDレジスタ <tt class="docutils literal">src1</tt> と <tt class="docutils literal">src2</tt> の値をメモリアドレス <tt class="docutils literal">dst</tt> にstoreする。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="section" id="move">
+          <h2>move</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="7%" />
+              <col width="13%" />
+              <col width="36%" />
+              <col width="44%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Mnemonic</th>
+                <th class="head">
+Operand</th>
+                <th class="head">
+Brief Description</th>
+                <th class="head">
+Meaning</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+                  <tt class="docutils literal">MOV</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst imm</tt>
+                </td>
+                <td>
+Move</td>
+                <td>
+即値 <tt class="docutils literal">imm</tt> をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MOV</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Move</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MRS</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Move System Register</td>
+                <td>
+システムレジスタ <tt class="docutils literal">src</tt> の値をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MSR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst imm</tt>
+                </td>
+                <td>
+Move immediate value to Special Register</td>
+                <td>
+即値 <tt class="docutils literal">imm</tt> を特別レジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MSR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Move general-purpose register to System Register</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値をシステムレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="section" id="bit-operation">
+          <h2>bit operation</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="6%" />
+              <col width="10%" />
+              <col width="26%" />
+              <col width="59%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Mnemonic</th>
+                <th class="head">
+Operand</th>
+                <th class="head">
+Brief Description</th>
+                <th class="head">
+Meaning</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+                  <tt class="docutils literal">AND</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src imm</tt>
+                </td>
+                <td>
+Bitwise AND (immediate)</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値と即値 <tt class="docutils literal">imm</tt> のビット積をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">AND</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src1 src2</tt>
+                </td>
+                <td>
+Bitwise AND (shifted register)</td>
+                <td>
+レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> のビット積をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">ANDS</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src imm</tt>
+                </td>
+                <td>
+Bitwise AND (immediate), setting flags</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値と即値 <tt class="docutils literal">imm</tt> のビット積をレジスタ <tt class="docutils literal">dst</tt> に格納し、条件フラグを設定する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">ANDS</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src1 src2</tt>
+                </td>
+                <td>
+Bitwise AND (shifted register), setting flags</td>
+                <td>
+レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> のビット積をレジスタ <tt class="docutils literal">dst</tt> に格納し、条件フラグを設定する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">ORR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src imm</tt>
+                </td>
+                <td>
+Bitwise OR (immediate)</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値と即値 <tt class="docutils literal">imm</tt> のビット和をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">ORR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src1 src2</tt>
+                </td>
+                <td>
+Bitwise OR (shifted register)</td>
+                <td>
+レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> のビット和をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="section" id="id11">
+        <h1>手続き呼び出し規約</h1>
+        <div class="section" id="id12">
+          <h2>汎用レジスタ</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="13%" />
+              <col width="10%" />
+              <col width="76%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Register</th>
+                <th class="head">
+Special</th>
+                <th class="head">
+Role in the procedure call standard</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+SP</td>
+                <td>
+</td>
+                <td>
+The Stack Pointer.</td>
+              </tr>
+              <tr>
+                <td>
+r30</td>
+                <td>
+LR</td>
+                <td>
+The Link Register.</td>
+              </tr>
+              <tr>
+                <td>
+r29</td>
+                <td>
+FP</td>
+                <td>
+The Frame Pointer</td>
+              </tr>
+              <tr>
+                <td>
+r19...r28</td>
+                <td>
+</td>
+                <td>
+Callee-saved registers.</td>
+              </tr>
+              <tr>
+                <td>
+r18</td>
+                <td>
+</td>
+                <td>
+The Platform Register, if needed;
+otherwise a temporary register.</td>
+              </tr>
+              <tr>
+                <td>
+r17</td>
+                <td>
+IP1</td>
+                <td>
+The second intra-procedure-call temporary register
+(can be used by call veneers and PLT code);
+at other times may be used as a temporary register.</td>
+              </tr>
+              <tr>
+                <td>
+r16</td>
+                <td>
+IP0</td>
+                <td>
+The first intra-procedure-call scratch register
+(can be used by call veneers and PLT code);
+at other times may be used as a temporary register.</td>
+              </tr>
+              <tr>
+                <td>
+r9...r15</td>
+                <td>
+</td>
+                <td>
+Temporary registers</td>
+              </tr>
+              <tr>
+                <td>
+r8</td>
+                <td>
+</td>
+                <td>
+Indirect result location register</td>
+              </tr>
+              <tr>
+                <td>
+r0...r7</td>
+                <td>
+</td>
+                <td>
+Parameter/result registers</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="section" id="id13">
+        <h1>アセンブリコードの読み方</h1>
+      </div>
+    </div>
+  </body>
+</html>
