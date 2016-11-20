@@ -985,3 +985,5 @@ return (``int32_t``)
 
 その他の ``OPAL_*`` のエラーコード
   エラー。
+
+.. header:: Back to: `[Open MPIのソース読みのメモ] <../openmpi-source-reading.en.xhtml>`_
