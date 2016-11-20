@@ -150,4 +150,4 @@ predefined datatype
 関数
 ================================================================
 
-.. header:: Back to: `[Open MPIのソース読みのメモ] <../openmpi-source-reading.en.xhtml>`_
+.. header:: Back to: `[Open MPIのソース読みのメモ] <../openmpi-source-reading.ja.xhtml>`_

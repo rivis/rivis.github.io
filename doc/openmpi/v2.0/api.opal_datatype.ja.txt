@@ -761,4 +761,4 @@ return (``int32_t``)
 1
   ``count`` が0のため複写不要。
 
-.. header:: Back to: `[Open MPIのソース読みのメモ] <../openmpi-source-reading.en.xhtml>`_
+.. header:: Back to: `[Open MPIのソース読みのメモ] <../openmpi-source-reading.ja.xhtml>`_
