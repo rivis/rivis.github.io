@@ -1,0 +1,377 @@
+digraph ompi_fortran_file_dependencies {
+
+    graph [
+        layout = dot
+    ]
+
+    # source files in source directories
+
+    node [
+        fontname = "Arial"
+        shape = ellipse
+        style = filled
+        color = yellow
+    ]
+
+    mpif_values_pl                      [ label = "$source_dir/\nompi/include/\nmpif-values.pl" ]
+    gen_mpi_sizeof_pl                   [ label = "$source_dir/\nompi/mpi/fortran/base/\ngen-mpi-sizeof.pl" ]
+    gen_mpi_mangling_pl                 [ label = "$source_dir/\nompi/mpi/fortran/base/\ngen-mpi-mangling.pl" ]
+
+    configure_mpif_ext_h                [ label = "$source_dir/\nconfigure" ]
+    configure_mpi_ext_module_F90        [ label = "$source_dir/\nconfigure" ]
+    configure_mpi_f08_ext_module_F90    [ label = "$source_dir/\nconfigure" ]
+
+    node [
+        fontname = "Arial"
+        shape = box
+        style = filled
+        color = yellow
+    ]
+
+#   fortran_kinds_sh_in                 [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-tkr/\nfortran_kinds.sh.in" ]
+
+    mpif_config_h_in                    [ label = "$source_dir/\nompi/include/\nmpif-config.h.in" ]
+    mpif_externals_h                    [ label = "$source_dir/\nompi/include/\nmpif-externals.h" ]
+    mpif_sentinels_h                    [ label = "$source_dir/\nompi/include/\nmpif-sentinels.h" ]
+    mpif_h_in                           [ label = "$source_dir/\nompi/include/\nmpif.h.in" ]
+
+    configure_fortran_output_h_in       [ label = "$source_dir/\nompi/mpi/fortran/\nconfigure-fortran-output.h.in" ]
+#   fortran_sizes_h_in                  [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-tkr/\nfortran_sizes.h.in" ]
+    mpi_ignore_tkr_interfaces_h_in      [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/\nmpi-ignore-tkr-interfaces.h.in" ]
+    mpi_ignore_tkr_file_interfaces_h_in [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/\nmpi-ignore-tkr-file-interfaces.h.in" ]
+
+    configure_fortran_output_bottom_h   [ label = "$source_dir/\nompi/mpi/fortran/\nconfigure-fortran-output-bottom.h" ]
+#   constants_h                         [ label = "$source_dir/\nompi/mpi/fortran/base/\nconstants.h" ]                        # for C
+#   strings_h                           [ label = "$source_dir/\nompi/mpi/fortran/base/\nstrings.h" ]                          # for C
+#   datarep_h                           [ label = "$source_dir/\nompi/mpi/fortran/base/\ndatarep.h" ]                          # for C
+#   fint_2_int_h                        [ label = "$source_dir/\nompi/mpi/fortran/base/\nfint_2_int.h" ]                       # for C
+    attr_fn_int_callback_interfaces_h   [ label = "$source_dir/\nompi/mpi/fortran/base/\nattr-fn-int-callback-interfaces.h" ]
+    conversion_fn_null_int_interface_h  [ label = "$source_dir/\nompi/mpi/fortran/base/\nconversion-fn-null-int-interface.h" ]
+#   bindings_h                          [ label = "$source_dir/\nompi/mpi/fortran/mpif-h/\nbindings.h" ]                       # for C
+#   prototypes_mpi_h                    [ label = "$source_dir/\nompi/mpi/fortran/mpif-h/\nprototypes_mpi.h" ]                 # for C
+#   status_conversion_h                 [ label = "$source_dir/\nompi/mpi/fortran/mpif-h/\nstatus-conversion.h" ]              # for C
+    mpi_ignore_tkr_F90                  [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/\nmpi-ignore-tkr.F90" ]
+#   mpi_f90_interfaces_h                [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-tkr/\nmpi-f90-interfaces.h" ]
+#   constants_h                         [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\nconstants.h" ]                 # not used
+    mpi_f_interfaces_bind_h             [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi-f-interfaces-bind.h" ]
+    pmpi_f_interfaces_bind_h            [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\npmpi-f-interfaces-bind.h" ]
+    pmpi_f08_interfaces_F90             [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\npmpi-f08-interfaces.F90" ]
+    mpi_f08_interfaces_callbacks_F90    [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi-f08-interfaces-callbacks.F90" ]
+    mpi_f08_types_F90                   [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi-f08-types.F90" ]
+    mpi_f08_interfaces_F90              [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi-f08-interfaces.F90" ]
+    mpi_f08_callbacks_F90               [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi-f08-callbacks.F90" ]
+    mpi_f08_F90                         [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi-f08.F90" ]
+
+#   ISO_Fortran_binding_h               [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08-desc/\nISO_Fortran_binding.h" ]
+#   constants_h                         [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08-desc/\nconstants.h" ]
+#   mpi_f_interfaces_bind_h             [ label = "$source_dir/\nompi/mpi/fortran/use-mpi-f08-desc/\nmpi-f-interfaces-bind.h" ]
+
+    # generated files in source directories
+
+    node [
+        fontname = "Arial"
+        shape = box
+        style = filled
+        color = greenyellow
+    ]
+
+    mpif_constants_h                    [ label = "$source_dir/\nompi/include/\nmpif-constants.h" ]
+    mpif_handles_h                      [ label = "$source_dir/\nompi/include/\nmpif-handles.h" ]
+    mpif_io_constants_h                 [ label = "$source_dir/\nompi/include/\nmpif-io-constants.h" ]
+    mpif_io_handles_h                   [ label = "$source_dir/\nompi/include/\nmpif-io-handles.h" ]
+
+    # generated files in build directories
+
+    node [
+        fontname = "Arial"
+        shape = ellipse
+        style = filled
+        color = greenyellow
+    ]
+
+#   fortran_kinds_sh                    [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-tkr/\nfortran_kinds.sh" ]
+
+    node [
+        fontname = "Arial"
+        shape = box
+        style = filled
+        color = greenyellow
+    ]
+
+    mpif_config_h                       [ label = "$build_dir/\nompi/include/\nmpif-config.h" ]
+    mpif_sizeof_h                       [ label = "$build_dir/\nompi/include/\nmpif-sizeof.h" ]
+    mpif_h                              [ label = "$build_dir/\nompi/include/\nmpif.h" ]
+
+#   mpif_c_constants_h                  [ label = "$build_dir/\nompi/include/\nmpif-c-constants.h" ]                           # for C
+#   mpif_c_constants_decl_h             [ label = "$build_dir/\nompi/include/\nmpif-c-constants-decl.h" ]                      # for C
+    mpif_f08_types_h                    [ label = "$build_dir/\nompi/include/\nmpif-f08-types.h" ]
+    mpif_ext_h                          [ label = "$build_dir/\nompi/include/\nmpif-ext.h" ]
+    configure_fortran_output_h          [ label = "$build_dir/\nompi/mpi/fortran/\nconfigure-fortran-output.h" ]
+    psizeof_f_f90                       [ label = "$build_dir/\nompi/mpi/fortran/mpif-h/profile/\npsizeof_f.f90" ]
+    sizeof_f_f90                        [ label = "$build_dir/\nompi/mpi/fortran/mpif-h/\nsizeof_f.f90" ]
+#   fortran_sizes_h                     [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-tkr/\nfortran_sizes.h" ]
+    mpi_ignore_tkr_interfaces_h         [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/\nmpi-ignore-tkr-interfaces.h" ]
+    mpi_ignore_tkr_file_interfaces_h    [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/\nmpi-ignore-tkr-file-interfaces.h" ]
+    mpi_ignore_tkr_sizeof_h             [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/\nmpi-ignore-tkr-sizeof.h" ]
+
+    mpi_f08_ext_module_F90              [ label = "$build_dir/\nompi/mpi/fortran/mpiext/\nmpi-f08-ext-module.F90" ]
+    mpi_ext_module_F90                  [ label = "$build_dir/\nompi/mpi/fortran/mpiext/\nmpi-ext-module.F90" ]
+
+    mpi_ignore_tkr_sizeof_f90           [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/\nmpi-ignore-tkr-sizeof.f90" ]
+    sizeof_f08_h                        [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/\nsizeof_f08.h" ]
+    psizeof_f08_f90                     [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/profile/\npsizeof_f08.f90" ]
+    sizeof_f08_f90                      [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/\nsizeof_f08.f90" ]
+
+    mpi_mod                             [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/\nmpi.mod" ]
+
+    mpi_f08_interfaces_callbacks_mod    [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi_f08_interfaces_callbacks.mod" ]
+    mpi_f08_types_mod                   [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi_f08_types.mod" ]
+    mpi_f08_interfaces_mod              [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi_f08_interfaces.mod" ]
+    pmpi_f08_interfaces_mod             [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/\npmpi_f08_interfaces.mod" ]
+    mpi_f08_callbacks_mod               [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi_f08_callbacks.mod" ]
+    mpi_f08_mod                         [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/\nmpi_f08.mod" ]
+
+    mpi_ext_mod                         [ label = "$build_dir/\nompi/mpi/fortran/mpiext/\nmpi_ext.mod" ]
+
+    mpi_f08_ext_mod                     [ label = "$build_dir/\nompi/mpi/fortran/mpiext/\nmpi_f08_ext.mod" ]
+
+    libmpi_mpifh_so                     [ label = "$build_dir/\nompi/mpi/fortran/mpif-h/.libs/\nlibmpi_mpifh.so" ]
+    libmpi_usempif08_so                 [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-f08/.libs/\nlibmpi_usempif08.so" ]
+    libmpi_usempi_ignore_tkr_so         [ label = "$build_dir/\nompi/mpi/fortran/use-mpi-ignore-tkr/.libs/\nlibmpi_usempi_ignore_tkr.so" ]
+
+    node [
+        fontname = "Arial"
+        shape = box
+        style = filled
+        color = aqua
+    ]
+
+    # user programs
+
+    user_f                              [ label = "$user_dir/\nuser.f" ]
+    user_f90                            [ label = "$user_dir/\nuser.f90" ]
+    user_f08                            [ label = "$user_dir/\nuser.f08" ]
+
+    # generatin relations between Open MPI files
+
+    edge [
+        label = "autogen.pl"
+        style = solid
+        color = blue
+    ]
+
+    mpif_values_pl          -> mpif_constants_h
+    mpif_values_pl          -> mpif_handles_h
+    mpif_values_pl          -> mpif_io_constants_h
+    mpif_values_pl          -> mpif_io_handles_h
+
+    edge [
+        label = "configure"
+        style = solid
+        color = green
+    ]
+
+    mpif_h_in                           -> mpif_h
+    mpif_config_h_in                    -> mpif_config_h
+    configure_fortran_output_h_in       -> configure_fortran_output_h
+    mpi_ignore_tkr_interfaces_h_in      -> mpi_ignore_tkr_interfaces_h
+    mpi_ignore_tkr_file_interfaces_h_in -> mpi_ignore_tkr_file_interfaces_h
+
+    configure_mpif_ext_h                -> mpif_ext_h
+    configure_mpi_ext_module_F90        -> mpi_ext_module_F90
+    configure_mpi_f08_ext_module_F90    -> mpi_f08_ext_module_F90
+
+    edge [
+        label = "make"
+        style = solid
+        color = purple
+    ]
+
+    gen_mpi_sizeof_pl       -> mpif_sizeof_h
+    gen_mpi_sizeof_pl       -> sizeof_f_f90
+    gen_mpi_sizeof_pl       -> psizeof_f_f90
+#    gen_mpi_sizeof_pl      -> mpi_tkr_sizeof_h
+#   gen_mpi_sizeof_pl       -> mpi_tkr_sizeof_f90
+    gen_mpi_sizeof_pl       -> mpi_ignore_tkr_sizeof_h
+    gen_mpi_sizeof_pl       -> mpi_ignore_tkr_sizeof_f90
+    gen_mpi_sizeof_pl       -> sizeof_f08_h
+    gen_mpi_sizeof_pl       -> sizeof_f08_f90
+    gen_mpi_sizeof_pl       -> psizeof_f08_f90
+
+#    gen_mpi_mangling_pl    -> mpif_c_constants_h      # for C
+#    gen_mpi_mangling_pl    -> mpif_c_constants_decl_h # for C
+    gen_mpi_mangling_pl     -> mpif_f08_types_h
+
+    mpi_ignore_tkr_F90      -> mpi_mod
+
+    pmpi_f08_interfaces_F90 -> pmpi_f08_interfaces_mod
+    mpi_f08_interfaces_callbacks_F90 -> mpi_f08_interfaces_callbacks_mod
+    mpi_f08_types_F90       -> mpi_f08_types_mod
+    mpi_f08_interfaces_F90  -> mpi_f08_interfaces_mod
+    mpi_f08_callbacks_F90   -> mpi_f08_callbacks_mod
+    mpi_f08_F90             -> mpi_f08_mod
+
+    mpi_ext_module_F90      -> mpi_ext_mod
+
+    mpi_f08_ext_module_F90  -> mpi_f08_ext_mod
+
+    sizeof_f_f90                -> libmpi_mpifh_so
+    psizeof_f_f90               -> libmpi_mpifh_so
+    mpi_ignore_tkr_sizeof_f90   -> libmpi_usempi_ignore_tkr_so
+    sizeof_f08_f90              -> libmpi_usempif08_so
+    psizeof_f08_f90             -> libmpi_usempif08_so
+
+    # includion/use relations between Open MPI files
+
+    edge [
+        label = "#include"
+        style = dashed
+        color = cyan
+    ]
+
+    configure_fortran_output_h -> mpi_ignore_tkr_F90
+
+    configure_fortran_output_h -> mpi_f_interfaces_bind_h
+    configure_fortran_output_h -> mpi_f08_interfaces_callbacks_F90
+    configure_fortran_output_h -> mpi_f08_types_F90
+    configure_fortran_output_h -> mpi_f08_interfaces_F90
+    configure_fortran_output_h -> mpi_f08_callbacks_F90
+    configure_fortran_output_h -> pmpi_f08_interfaces_F90
+
+    mpif_f08_types_h           -> mpi_f08_types_F90
+
+    configure_fortran_output_h -> mpi_f08_F90
+    mpi_f_interfaces_bind_h    -> mpi_f08_F90
+    pmpi_f_interfaces_bind_h   -> mpi_f08_F90
+
+    edge [
+        label = "include"
+        style = dashed
+        color = navy
+    ]
+
+    configure_fortran_output_bottom_h -> configure_fortran_output_h
+
+    mpif_config_h           -> conversion_fn_null_int_interface_h
+    mpif_config_h           -> attr_fn_int_callback_interfaces_h
+
+    mpif_config_h           -> mpif_h
+    mpif_constants_h        -> mpif_h
+    mpif_handles_h          -> mpif_h
+    mpif_io_constants_h     -> mpif_h
+    mpif_io_handles_h       -> mpif_h
+    mpif_externals_h        -> mpif_h
+    mpif_sentinels_h        -> mpif_h
+    mpif_sizeof_h           -> mpif_h
+
+    mpif_config_h           -> mpif_h
+
+    mpif_config_h           -> mpi_ignore_tkr_interfaces_h
+    mpif_config_h           -> mpi_ignore_tkr_file_interfaces_h
+    mpif_config_h           -> mpi_ignore_tkr_F90
+    mpif_constants_h        -> mpi_ignore_tkr_F90
+    mpif_handles_h          -> mpi_ignore_tkr_F90
+    mpif_io_constants_h     -> mpi_ignore_tkr_F90
+    mpif_io_handles_h       -> mpi_ignore_tkr_F90
+    mpif_sentinels_h        -> mpi_ignore_tkr_F90
+    attr_fn_int_callback_interfaces_h  -> mpi_ignore_tkr_F90
+    conversion_fn_null_int_interface_h -> mpi_ignore_tkr_F90
+    mpi_ignore_tkr_interfaces_h        -> mpi_ignore_tkr_F90
+    mpi_ignore_tkr_file_interfaces_h   -> mpi_ignore_tkr_F90
+    mpi_ignore_tkr_sizeof_h            -> mpi_ignore_tkr_F90
+
+    mpif_config_h           -> mpi_f08_types_F90
+    mpif_constants_h        -> mpi_f08_types_F90
+    mpif_io_constants_h     -> mpi_f08_types_F90
+    sizeof_f08_h            -> mpi_f08_F90
+
+    edge [
+        label = "use"
+        style = dashed
+        color = maroon
+    ]
+
+    mpi_f08_types_mod       -> mpi_f_interfaces_bind_h
+    mpi_f08_types_mod       -> pmpi_f08_interfaces_F90
+    mpi_f08_interfaces_callbacks_mod -> pmpi_f08_interfaces_F90
+    mpi_f08_types_mod       -> mpi_f08_interfaces_callbacks_F90
+    mpi_f08_interfaces_callbacks_mod -> mpi_f08_interfaces_F90
+    mpi_f08_types_mod       -> mpi_f08_interfaces_F90
+    mpi_f08_types_mod       -> mpi_f08_callbacks_F90
+    mpi_f08_types_mod       -> mpi_f08_F90
+    mpi_f08_interfaces_mod  -> mpi_f08_F90
+    pmpi_f08_interfaces_mod -> mpi_f08_F90
+    mpi_f08_callbacks_mod   -> mpi_f08_F90
+
+    # relations between an Open MPI file and a user file
+
+    edge [
+        label = "include"
+        style = dashed
+        color = navy
+    ]
+
+    mpif_h                  -> user_f
+    mpif_ext_h              -> user_f
+
+    edge [
+        label = "use"
+        style = dashed
+        color = cyan
+        color = maroon
+    ]
+
+    mpi_mod                 -> user_f90
+    mpi_ext_mod             -> user_f90
+    mpi_f08_mod             -> user_f08
+    mpi_f08_ext_mod         -> user_f08
+
+    edge [
+        label = "link"
+        style = dotted
+        color = black
+    ]
+
+    libmpi_mpifh_so             -> user_f
+    libmpi_usempi_ignore_tkr_so -> user_f90
+    libmpi_usempif08_so         -> user_f08
+
+    # rankings
+
+    {
+        rank = source
+        mpif_values_pl
+    }
+
+    {
+        rank = source
+        mpif_h_in
+        mpif_config_h_in
+        configure_fortran_output_h_in
+        mpi_ignore_tkr_interfaces_h_in
+        mpi_ignore_tkr_file_interfaces_h_in
+        configure_mpif_ext_h
+        configure_mpi_ext_module_F90
+        configure_mpi_f08_ext_module_F90
+    }
+
+    {
+        rank = same
+        mpif_h
+        mpif_ext_h
+        mpi_mod
+        mpi_ext_mod
+        mpi_f08_mod
+        mpi_f08_ext_mod
+        libmpi_mpifh_so
+        libmpi_usempi_ignore_tkr_so
+        libmpi_usempif08_so
+    }
+
+    {
+        rank = same
+        user_f
+        user_f90
+        user_f08
+    }
+}

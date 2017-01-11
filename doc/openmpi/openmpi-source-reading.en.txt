@@ -21,6 +21,10 @@ is also available.
   * `process (Open MPI 2.0) <./v2.0/figures/class.proc.svg>`_
   * `datatype (Open MPI 2.0) <./v2.0/figures/class.datatype.svg>`_
 
+- Dependency Graphs
+
+  * `Fortran source files <./v2.1/fortran-file-dependencies.en.xhtml>`_
+
 - Call Sequences of Functions
 
   * `MPI_INIT (Open MPI 2.0) <./v2.0/mpi-init-sequence.txt>`_

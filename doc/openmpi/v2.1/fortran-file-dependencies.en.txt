@@ -1,0 +1,60 @@
+################################################################
+Fortran Source File Dependencies
+################################################################
+
+.. style: docutils-report
+
+The MPI-3.1 Standard defines three methods of Fortran support.
+An MPI program can be written using one of these.
+
+- ``USE mpi_f08``
+- ``USE mpi``
+- ``INCLUDE 'mpif.h'``
+
+Additionally, Open MPI can provide MPI extensions (mpiext).
+MPI extensions are routines that are not defined in MPI Standard
+but defined by the Open MPI community, and are available
+only if Open MPI is configured to include MPI extensions via
+the ``--enable-mpi-ext`` option of the ``configure`` script.
+MPI extensions also can be used from an MPI program through
+one of three methods.
+
+- ``USE mpi_f08_ext``
+- ``USE mpi_ext``
+- ``INCLUDE 'mpif-ext.h'``
+
+For these methods the build procedure of Open MPI generates
+following include files and modules.
+Modules are compiler-dependent files and typically named ``*.mod``
+(``mpi.mod`` for the ``mpi`` module).
+
+- ``mpi_f08`` module
+- ``mpi`` module
+- ``mpif.h`` file
+- ``mpi_f08_ext`` module
+- ``mpi_ext`` module
+- ``mpif-ext.h`` file
+
+These files are generated from other source files and *include*
+or *use* other include files and modules. So the relation is
+complex.
+
+I created a graph which describes the dependencies of source files
+and generated files.
+
+Yellow boxes are source files. Green boxes are generated files.
+Blue boxes are files created by users.
+``USE mpi`` support of Open MPI is built from either
+``ompi/mpi/fortran/use-mpi-ignore-tkr`` directory or
+``ompi/mpi/fortran/use-mpi-tkr`` directory.
+The former can provide better Fortran-MPI integration
+but requires some compiler extension.
+My graph assumes to use ``ompi/mpi/fortran/use-mpi-ignore-tkr``.
+
+.. figure:: figures/fortran-file-dependencies.svg
+
+`Direct link to the figure <./figures/fortran-file-dependencies.svg>`_
+and `DOT source of the figure <./figures/fortran-file-dependencies.dot>`_
+are available.
+
+.. header:: Back to: `[Notes on Open MPI Source Reading] <../openmpi-source-reading.en.xhtml>`_

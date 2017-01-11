@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+    <title>Fortran Source File Dependencies</title>
+    <link rel="stylesheet" href="../../../css/docutils-report.css" type="text/css" />
+  </head>
+  <body>
+    <div class="header">
+Back to: <a class="reference external" href="../openmpi-source-reading.en.xhtml">[Notes on Open MPI Source Reading]</a>
+<hr class="header" />
+</div>
+    <div class="document" id="fortran-source-file-dependencies">
+      <h1 class="title">Fortran Source File Dependencies</h1>
+<!-- style: docutils-report -->
+      <p>The MPI-3.1 Standard defines three methods of Fortran support.
+An MPI program can be written using one of these.</p>
+      <ul class="simple">
+        <li>
+          <tt class="docutils literal">USE mpi_f08</tt>
+        </li>
+        <li>
+          <tt class="docutils literal">USE mpi</tt>
+        </li>
+        <li>
+          <tt class="docutils literal">INCLUDE 'mpif.h'</tt>
+        </li>
+      </ul>
+      <p>Additionally, Open MPI can provide MPI extensions (mpiext).
+MPI extensions are routines that are not defined in MPI Standard
+but defined by the Open MPI community, and are available
+only if Open MPI is configured to include MPI extensions via
+the <tt class="docutils literal"><span class="pre">--enable-mpi-ext</span></tt> option of the <tt class="docutils literal">configure</tt> script.
+MPI extensions also can be used from an MPI program through
+one of three methods.</p>
+      <ul class="simple">
+        <li>
+          <tt class="docutils literal">USE mpi_f08_ext</tt>
+        </li>
+        <li>
+          <tt class="docutils literal">USE mpi_ext</tt>
+        </li>
+        <li>
+          <tt class="docutils literal">INCLUDE <span class="pre">'mpif-ext.h'</span></tt>
+        </li>
+      </ul>
+      <p>For these methods the build procedure of Open MPI generates
+following include files and modules.
+Modules are compiler-dependent files and typically named <tt class="docutils literal">*.mod</tt>
+(<tt class="docutils literal">mpi.mod</tt> for the <tt class="docutils literal">mpi</tt> module).</p>
+      <ul class="simple">
+        <li><tt class="docutils literal">mpi_f08</tt> module</li>
+        <li><tt class="docutils literal">mpi</tt> module</li>
+        <li><tt class="docutils literal">mpif.h</tt> file</li>
+        <li><tt class="docutils literal">mpi_f08_ext</tt> module</li>
+        <li><tt class="docutils literal">mpi_ext</tt> module</li>
+        <li><tt class="docutils literal"><span class="pre">mpif-ext.h</span></tt> file</li>
+      </ul>
+      <p>These files are generated from other source files and <em>include</em>
+or <em>use</em> other include files and modules. So the relation is
+complex.</p>
+      <p>I created a graph which describes the dependencies of source files
+and generated files.</p>
+      <p>Yellow boxes are source files. Green boxes are generated files.
+Blue boxes are files created by users.
+<tt class="docutils literal">USE mpi</tt> support of Open MPI is built from either
+<tt class="docutils literal"><span class="pre">ompi/mpi/fortran/use-mpi-ignore-tkr</span></tt> directory or
+<tt class="docutils literal"><span class="pre">ompi/mpi/fortran/use-mpi-tkr</span></tt> directory.
+The former can provide better Fortran-MPI integration
+but requires some compiler extension.
+My graph assumes to use <tt class="docutils literal"><span class="pre">ompi/mpi/fortran/use-mpi-ignore-tkr</span></tt>.</p>
+      <div class="figure">
+        <object data="figures/fortran-file-dependencies.svg" type="image/svg+xml">
+figures/fortran-file-dependencies.svg</object>
+      </div>
+      <p><a class="reference external" href="./figures/fortran-file-dependencies.svg">Direct link to the figure</a>
+and <a class="reference external" href="./figures/fortran-file-dependencies.dot">DOT source of the figure</a>
+are available.</p>
+    </div>
+  </body>
+</html>
