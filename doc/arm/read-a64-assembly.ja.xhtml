@@ -30,7 +30,12 @@ ARMv8-A, AArch64, A64を含むARMアーキテクチャの情報は、
 <a class="reference external" href="http://infocenter.arm.com/">ARM社のARM Infocenter</a> に存在する。特に、ユーザ空間のアプリケーションで動作する一般的なプログラムのアセンブリコードを読むには、以下の文書が参考になるであろう。</p>
           <dl class="docutils">
             <dt>
-              <a class="reference external" href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0801e/index.html">ARM Compiler armasm User Guide (英語)</a>
+              <a class="reference external" href="https://developer.arm.com/docs/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture profile (英語)</a>
+            </dt>
+            <dd>
+ARMv8アーキテクチャにおけるデータ型、メモリモデル、レジスタ、命令セットなどの全体の説明がある。</dd>
+            <dt>
+              <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.100069_0607_00_en/index.html">ARM Compiler armasm User Guide (英語)</a>
             </dt>
             <dd>
 A32、T32、A64のアセンブリ言語の記述や各命令の説明と、その説明に必要な状態(AArch32, AArch64)、レジスタ、条件コードなどの説明がある。</dd>
@@ -40,13 +45,13 @@ A32、T32、A64のアセンブリ言語の記述や各命令の説明と、そ�
             <dd>
 上記の文書の日本語版。</dd>
             <dt>
-              <a class="reference external" href="http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ihi0055c/index.html">Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語)</a>
+              <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.ihi0055c/index.html">Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語)</a>
             </dt>
             <dd>
 AArch64のABI (Application Binary Interface)での手続き呼び出しの規約の説明がある。手続き呼び出し時にレジスタをどのように使うかなど。</dd>
           </dl>
           <p>
-ただし、上記のリンクは2016年6月時点での最新バージョンへのリンクである。新しいバージョンの文書が存在する場合は、新しい方を参照した方がよい。</p>
+ただし、上記のリンクは2017年5月時点での最新バージョンへのリンクである。新しいバージョンの文書が存在する場合は、新しい方を参照した方がよい。</p>
         </div>
         <div class="section" id="id3">
           <h2>前提となる知識</h2>
@@ -226,8 +231,8 @@ NZCVレジスタは、 <tt class="docutils literal">MSR</tt> (Move immediate val
       </div>
       <div class="section" id="id10">
         <h1>主要な命令</h1>
-        <div class="section" id="branch-return">
-          <h2>branch/return</h2>
+        <div class="section" id="branch">
+          <h2>Branch</h2>
           <table border="1" class="docutils">
             <colgroup>
               <col width="8%" />
@@ -508,7 +513,7 @@ Always (this is the default)</td>
           </table>
         </div>
         <div class="section" id="load">
-          <h2>load</h2>
+          <h2>Load</h2>
           <table border="1" class="docutils">
             <colgroup>
               <col width="6%" />
@@ -641,7 +646,7 @@ Load Pair of Registers Signed Word</td>
           </table>
         </div>
         <div class="section" id="store">
-          <h2>store</h2>
+          <h2>Store</h2>
           <table border="1" class="docutils">
             <colgroup>
               <col width="6%" />
@@ -725,14 +730,14 @@ FP/SIMDレジスタ <tt class="docutils literal">src1</tt> と <tt class="docuti
             </tbody>
           </table>
         </div>
-        <div class="section" id="move">
-          <h2>move</h2>
+        <div class="section" id="arithmetic">
+          <h2>Arithmetic</h2>
           <table border="1" class="docutils">
             <colgroup>
-              <col width="7%" />
-              <col width="13%" />
-              <col width="36%" />
-              <col width="44%" />
+              <col width="6%" />
+              <col width="10%" />
+              <col width="21%" />
+              <col width="62%" />
             </colgroup>
             <thead valign="bottom">
               <tr>
@@ -749,69 +754,111 @@ Meaning</th>
             <tbody valign="top">
               <tr>
                 <td>
-                  <tt class="docutils literal">MOV</tt>
+                  <tt class="docutils literal">ADD</tt>
                 </td>
                 <td>
-                  <tt class="docutils literal">dst imm</tt>
+                  <tt class="docutils literal">dst src imm</tt>
                 </td>
                 <td>
-Move</td>
+Add (immediate)</td>
                 <td>
-即値 <tt class="docutils literal">imm</tt> をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+レジスタ <tt class="docutils literal">src</tt> の値と即値 <tt class="docutils literal">imm</tt> の和をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
               </tr>
               <tr>
                 <td>
-                  <tt class="docutils literal">MOV</tt>
+                  <tt class="docutils literal">ADD</tt>
                 </td>
                 <td>
-                  <tt class="docutils literal">dst src</tt>
+                  <tt class="docutils literal">dst src1 src2</tt>
                 </td>
                 <td>
-Move</td>
+Add (register)</td>
                 <td>
-レジスタ <tt class="docutils literal">src</tt> の値をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> の値の和をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
               </tr>
               <tr>
                 <td>
-                  <tt class="docutils literal">MRS</tt>
+                  <tt class="docutils literal">ADDS</tt>
                 </td>
                 <td>
-                  <tt class="docutils literal">dst src</tt>
+                  <tt class="docutils literal">dst src imm</tt>
                 </td>
                 <td>
-Move System Register</td>
+Add (immediate), setting flags</td>
                 <td>
-システムレジスタ <tt class="docutils literal">src</tt> の値をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+レジスタ <tt class="docutils literal">src</tt> の値と即値 <tt class="docutils literal">imm</tt> の和をレジスタ <tt class="docutils literal">dst</tt> に格納し、条件フラグを設定する。</td>
               </tr>
               <tr>
                 <td>
-                  <tt class="docutils literal">MSR</tt>
+                  <tt class="docutils literal">ADDS</tt>
                 </td>
                 <td>
-                  <tt class="docutils literal">dst imm</tt>
+                  <tt class="docutils literal">dst src1 src2</tt>
                 </td>
                 <td>
-Move immediate value to Special Register</td>
+Add (register), setting flags</td>
                 <td>
-即値 <tt class="docutils literal">imm</tt> を特別レジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> の値の和をレジスタ <tt class="docutils literal">dst</tt> に格納し、条件フラグを設定する。</td>
               </tr>
               <tr>
                 <td>
-                  <tt class="docutils literal">MSR</tt>
+                  <tt class="docutils literal">SUB</tt>
                 </td>
                 <td>
-                  <tt class="docutils literal">dst src</tt>
+                  <tt class="docutils literal">dst src imm</tt>
                 </td>
                 <td>
-Move general-purpose register to System Register</td>
+Subtract (immediate)</td>
                 <td>
-レジスタ <tt class="docutils literal">src</tt> の値をシステムレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+レジスタ <tt class="docutils literal">src</tt> の値と即値 <tt class="docutils literal">imm</tt> の差をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">SUB</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src1 src2</tt>
+                </td>
+                <td>
+Subtract (register)</td>
+                <td>
+レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> の値の差をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">SUBS</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src imm</tt>
+                </td>
+                <td>
+Subtract (immediate), setting flags</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値と即値 <tt class="docutils literal">imm</tt> の差をレジスタ <tt class="docutils literal">dst</tt> に格納し、条件フラグを設定する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">SUBS</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src1 src2</tt>
+                </td>
+                <td>
+Subtract (register), setting flags</td>
+                <td>
+レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> の値の差をレジスタ <tt class="docutils literal">dst</tt> に格納し、条件フラグを設定する。</td>
               </tr>
             </tbody>
           </table>
+<!-- ToDo: ``CMP``, ``CMN`` を追加する -->
+          <p>
+上記でBrief Descriptionに "(register)" と書いた命令には、実際には
+"(shifted register)" と "(extended register)" の2つの命令が存在する。shifted registerは、追加のoperandで指定された通り、 <tt class="docutils literal">src2</tt> をビットシフト
+(LSL (論理左シフト)またはLSR (論理右シフト)またはASR (算術右シフト)してから、
+<tt class="docutils literal">src1</tt> との和を取る。extended registerは、追加のoperandで指定された通り、<tt class="docutils literal">src2</tt> を符号拡張とビットシフト(LSR (論理右シフト))してから、 <tt class="docutils literal">src1</tt> との和を取る。</p>
         </div>
-        <div class="section" id="bit-operation">
-          <h2>bit operation</h2>
+        <div class="section" id="logical">
+          <h2>Logical</h2>
           <table border="1" class="docutils">
             <colgroup>
               <col width="6%" />
@@ -903,6 +950,117 @@ Bitwise OR (immediate)</td>
 Bitwise OR (shifted register)</td>
                 <td>
 レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> のビット和をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">EOR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src imm</tt>
+                </td>
+                <td>
+Bitwise Exclusive OR (immediate)</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値と即値 <tt class="docutils literal">imm</tt> の排他的ビット和をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">EOR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src1 src2</tt>
+                </td>
+                <td>
+Bitwise Exclusive OR (shifted register)</td>
+                <td>
+レジスタ <tt class="docutils literal">src1</tt> の値とレジスタ <tt class="docutils literal">src2</tt> の排他的ビット和をレジスタ <tt class="docutils literal">dst</tt> に格納する。</td>
+              </tr>
+            </tbody>
+          </table>
+<!-- ToDo: ``TST`` を追加する -->
+<!-- ToDo: ``BIC``, ``BICS``, ``EON``, ``MVN`` を追加する -->
+        </div>
+        <div class="section" id="move">
+          <h2>Move</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="7%" />
+              <col width="13%" />
+              <col width="36%" />
+              <col width="44%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Mnemonic</th>
+                <th class="head">
+Operand</th>
+                <th class="head">
+Brief Description</th>
+                <th class="head">
+Meaning</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+                  <tt class="docutils literal">MOV</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst imm</tt>
+                </td>
+                <td>
+Move</td>
+                <td>
+即値 <tt class="docutils literal">imm</tt> をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MOV</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Move</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MRS</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Move System Register</td>
+                <td>
+システムレジスタ <tt class="docutils literal">src</tt> の値をレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MSR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst imm</tt>
+                </td>
+                <td>
+Move immediate value to Special Register</td>
+                <td>
+即値 <tt class="docutils literal">imm</tt> を特別レジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
+              </tr>
+              <tr>
+                <td>
+                  <tt class="docutils literal">MSR</tt>
+                </td>
+                <td>
+                  <tt class="docutils literal">dst src</tt>
+                </td>
+                <td>
+Move general-purpose register to System Register</td>
+                <td>
+レジスタ <tt class="docutils literal">src</tt> の値をシステムレジスタ <tt class="docutils literal">dst</tt> にmoveする。</td>
               </tr>
             </tbody>
           </table>

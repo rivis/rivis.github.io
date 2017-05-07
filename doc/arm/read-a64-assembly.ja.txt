@@ -39,16 +39,19 @@ ARMv8-A, AArch64, A64を含むARMアーキテクチャの情報は、
 特に、ユーザ空間のアプリケーションで動作する一般的なプログラムの
 アセンブリコードを読むには、以下の文書が参考になるであろう。
 
-`ARM Compiler armasm User Guide (英語) <http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0801e/index.html>`_
+`ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture profile (英語) <https://developer.arm.com/docs/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile>`_
+  ARMv8アーキテクチャにおけるデータ型、メモリモデル、レジスタ、
+  命令セットなどの全体の説明がある。
+`ARM Compiler armasm User Guide (英語) <http://infocenter.arm.com/help/topic/com.arm.doc.100069_0607_00_en/index.html>`_
   A32、T32、A64のアセンブリ言語の記述や各命令の説明と、その説明に
   必要な状態(AArch32, AArch64)、レジスタ、条件コードなどの説明がある。
 `ARM コンパイラ armasm ユーザガイド (日本語) <http://infocenter.arm.com/help/topic/com.arm.doc.dui0801cj/index.html>`_
   上記の文書の日本語版。
-`Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語) <http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ihi0055c/index.html>`_
+`Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語) <http://infocenter.arm.com/help/topic/com.arm.doc.ihi0055c/index.html>`_
   AArch64のABI (Application Binary Interface)での手続き呼び出しの
   規約の説明がある。手続き呼び出し時にレジスタをどのように使うかなど。
 
-ただし、上記のリンクは2016年6月時点での最新バージョンへのリンクである。
+ただし、上記のリンクは2017年5月時点での最新バージョンへのリンクである。
 新しいバージョンの文書が存在する場合は、新しい方を参照した方がよい。
 
 前提となる知識
@@ -202,8 +205,8 @@ NZCVレジスタは、 ``MSR`` (Move immediate value to Special Register)命令
 主要な命令
 ==========
 
-branch/return
--------------
+Branch
+------
 
 ========== ================= ============================== ============================================================================
 Mnemonic   Operand           Brief Description              Meaning
@@ -247,7 +250,7 @@ Suffix Meaning
 ``AL`` Always (this is the default)
 ====== =========================================
 
-load
+Load
 ----
 
 ========== ================= =================================== ==============================================================================================================
@@ -264,7 +267,7 @@ Mnemonic   Operand           Brief Description                    Meaning
 ``LDPSW``  ``dst1 dst2 src`` Load Pair of Registers Signed Word  メモリアドレス ``src`` から2つの値(32ビット)をloadし、符号拡張し、レジスタ ``dst1`` と ``dst2`` に格納する。
 ========== ================= =================================== ==============================================================================================================
 
-store
+Store
 -----
 
 ========== ================= =================================== ================================================================================================
@@ -277,7 +280,52 @@ Mnemonic   Operand           Brief Description                    Meaning
 ``STP``    ``src1 src2 dst`` Store Pair of SIMD and FP Registers FP/SIMDレジスタ ``src1`` と ``src2`` の値をメモリアドレス ``dst`` にstoreする。
 ========== ================= =================================== ================================================================================================
 
-move
+Arithmetic
+----------
+
+========== ================= =================================== =====================================================================================================
+Mnemonic   Operand           Brief Description                             Meaning
+========== ================= =================================== =====================================================================================================
+``ADD``    ``dst src imm``   Add (immediate)                     レジスタ ``src`` の値と即値 ``imm`` の和をレジスタ ``dst`` に格納する。
+``ADD``    ``dst src1 src2`` Add (register)                      レジスタ ``src1`` の値とレジスタ ``src2`` の値の和をレジスタ ``dst`` に格納する。
+``ADDS``   ``dst src imm``   Add (immediate), setting flags      レジスタ ``src`` の値と即値 ``imm`` の和をレジスタ ``dst`` に格納し、条件フラグを設定する。
+``ADDS``   ``dst src1 src2`` Add (register), setting flags       レジスタ ``src1`` の値とレジスタ ``src2`` の値の和をレジスタ ``dst`` に格納し、条件フラグを設定する。
+``SUB``    ``dst src imm``   Subtract (immediate)                レジスタ ``src`` の値と即値 ``imm`` の差をレジスタ ``dst`` に格納する。
+``SUB``    ``dst src1 src2`` Subtract (register)                 レジスタ ``src1`` の値とレジスタ ``src2`` の値の差をレジスタ ``dst`` に格納する。
+``SUBS``   ``dst src imm``   Subtract (immediate), setting flags レジスタ ``src`` の値と即値 ``imm`` の差をレジスタ ``dst`` に格納し、条件フラグを設定する。
+``SUBS``   ``dst src1 src2`` Subtract (register), setting flags  レジスタ ``src1`` の値とレジスタ ``src2`` の値の差をレジスタ ``dst`` に格納し、条件フラグを設定する。
+========== ================= =================================== =====================================================================================================
+
+.. ToDo: ``CMP``, ``CMN`` を追加する
+
+上記でBrief Descriptionに "(register)" と書いた命令には、実際には
+"(shifted register)" と "(extended register)" の2つの命令が存在する。
+shifted registerは、追加のoperandで指定された通り、 ``src2`` をビットシフト
+(LSL (論理左シフト)またはLSR (論理右シフト)またはASR (算術右シフト)してから、
+``src1`` との和を取る。
+extended registerは、追加のoperandで指定された通り、``src2`` を符号拡張と
+ビットシフト(LSR (論理右シフト))してから、 ``src1`` との和を取る。
+
+Logical
+-------
+
+========== ================= ============================================= =======================================================================================================
+Mnemonic   Operand           Brief Description                             Meaning
+========== ================= ============================================= =======================================================================================================
+``AND``    ``dst src imm``   Bitwise AND (immediate)                       レジスタ ``src`` の値と即値 ``imm`` のビット積をレジスタ ``dst`` に格納する。
+``AND``    ``dst src1 src2`` Bitwise AND (shifted register)                レジスタ ``src1`` の値とレジスタ ``src2`` のビット積をレジスタ ``dst`` に格納する。
+``ANDS``   ``dst src imm``   Bitwise AND (immediate), setting flags        レジスタ ``src`` の値と即値 ``imm`` のビット積をレジスタ ``dst`` に格納し、条件フラグを設定する。
+``ANDS``   ``dst src1 src2`` Bitwise AND (shifted register), setting flags レジスタ ``src1`` の値とレジスタ ``src2`` のビット積をレジスタ ``dst`` に格納し、条件フラグを設定する。
+``ORR``    ``dst src imm``   Bitwise OR (immediate)                        レジスタ ``src`` の値と即値 ``imm`` のビット和をレジスタ ``dst`` に格納する。
+``ORR``    ``dst src1 src2`` Bitwise OR (shifted register)                 レジスタ ``src1`` の値とレジスタ ``src2`` のビット和をレジスタ ``dst`` に格納する。
+``EOR``    ``dst src imm``   Bitwise Exclusive OR (immediate)              レジスタ ``src`` の値と即値 ``imm`` の排他的ビット和をレジスタ ``dst`` に格納する。
+``EOR``    ``dst src1 src2`` Bitwise Exclusive OR (shifted register)       レジスタ ``src1`` の値とレジスタ ``src2`` の排他的ビット和をレジスタ ``dst`` に格納する。
+========== ================= ============================================= =======================================================================================================
+
+.. ToDo: ``TST`` を追加する
+.. ToDo: ``BIC``, ``BICS``, ``EON``, ``MVN`` を追加する
+
+Move
 ----
 
 ========== ================= ================================================ ============================================================
@@ -289,20 +337,6 @@ Mnemonic   Operand           Brief Description                                Me
 ``MSR``    ``dst imm``       Move immediate value to Special Register         即値 ``imm`` を特別レジスタ ``dst`` にmoveする。
 ``MSR``    ``dst src``       Move general-purpose register to System Register レジスタ ``src`` の値をシステムレジスタ ``dst`` にmoveする。
 ========== ================= ================================================ ============================================================
-
-bit operation
--------------
-
-========== ================= ============================================= =======================================================================================================
-Mnemonic   Operand           Brief Description                             Meaning
-========== ================= ============================================= =======================================================================================================
-``AND``    ``dst src imm``   Bitwise AND (immediate)                       レジスタ ``src`` の値と即値 ``imm`` のビット積をレジスタ ``dst`` に格納する。
-``AND``    ``dst src1 src2`` Bitwise AND (shifted register)                レジスタ ``src1`` の値とレジスタ ``src2`` のビット積をレジスタ ``dst`` に格納する。
-``ANDS``   ``dst src imm``   Bitwise AND (immediate), setting flags        レジスタ ``src`` の値と即値 ``imm`` のビット積をレジスタ ``dst`` に格納し、条件フラグを設定する。
-``ANDS``   ``dst src1 src2`` Bitwise AND (shifted register), setting flags レジスタ ``src1`` の値とレジスタ ``src2`` のビット積をレジスタ ``dst`` に格納し、条件フラグを設定する。
-``ORR``    ``dst src imm``   Bitwise OR (immediate)                        レジスタ ``src`` の値と即値 ``imm`` のビット和をレジスタ ``dst`` に格納する。
-``ORR``    ``dst src1 src2`` Bitwise OR (shifted register)                 レジスタ ``src1`` の値とレジスタ ``src2`` のビット和をレジスタ ``dst`` に格納する。
-========== ================= ============================================= =======================================================================================================
 
 手続き呼び出し規約
 ==================
