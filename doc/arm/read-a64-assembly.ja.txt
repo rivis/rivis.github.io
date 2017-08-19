@@ -110,6 +110,8 @@ W31またはX31という名前のレジスタはない。
 復帰アドレスを格納する。
 リターンアドレスがスタックにストアされる場合は、LRを汎用レジスタと
 して使用することもできる。LRはレジスタ30にマップする。
+サブルーチン呼び出し時の各レジスタの使用方法は、
+`手続き呼び出し規約`_ にしたがう。
 
 AArch64状態で事前宣言されているコアレジスタの名前は以下の通りである。
 
@@ -147,13 +149,15 @@ NZCVレジスタ
 
 特殊なレジスタとして、条件フラグのコピーを保持するNZCVレジスタがある。
 
-NZCVレジスタは、 ``CMP`` などの比較命令を実行したときに
-その比較結果に応じて間接的に更新され、 ``B.cond`` 命令を
+NZCVレジスタは、 ``CMP``, ``CMN``, ``ADDS``, ``SUBS`` などの比較命令を
+実行したときにその比較結果に応じて間接的に更新され、 ``B.cond`` 命令を
 実行したときに間接的に参照される。
 
 NZCVレジスタは、 ``MSR`` (Move immediate value to Special Register)命令
 および ``MRS`` (Move general-purpose register to System Register)命令を
 使用して直接アクセスできるが、通常のプログラムでは直接アクセスしない。
+
+NZCVは、Negative, Zero, Carry, Overflowを意味する。
 
 .. ToDo 例を書く
 
@@ -224,9 +228,10 @@ Mnemonic   Operand           Brief Description              Meaning
                                                             ``reg`` が無い場合はレジスタX30のメモリアドレスにreturnする。
 ========== ================= ============================== ============================================================================
 
-``B.cond`` では、その命令より前に実行された ``CMP`` などの比較命令に
-よって設定されたNZCVシステムレジスタの値を見てbranchするかどうかが
-決まる。 ``cond`` は以下のいずれかである。
+``B.cond`` では、その命令より前に実行された ``CMP``, ``CMN``,
+``ADDS``, ``SUBS`` などの比較命令によって設定されたNZCVシステム
+レジスタの値を見てbranchするかどうかが決まる。
+``cond`` は以下のいずれかである。
 
 ====== =========================================
 Suffix Meaning
@@ -253,19 +258,19 @@ Suffix Meaning
 Load
 ----
 
-========== ================= =================================== ==============================================================================================================
+========== ================= =================================== ======================================================================================================================
 Mnemonic   Operand           Brief Description                    Meaning
-========== ================= =================================== ==============================================================================================================
-``LDRB``   ``dst src``       Load Register Byte                  メモリアドレス ``src`` から値(8ビット)をloadし、レジスタ ``dst`` に格納する。
-``LDRH``   ``dst src``       Load Register Halfword              メモリアドレス ``src`` から値(16ビット)をloadし、レジスタ ``dst`` に格納する。
+========== ================= =================================== ======================================================================================================================
+``LDRB``   ``dst src``       Load Register Byte                  メモリアドレス ``src`` から値(8ビット)をloadし、ゼロ拡張し、レジスタ ``dst`` に格納する。
+``LDRH``   ``dst src``       Load Register Halfword              メモリアドレス ``src`` から値(16ビット)をloadし、ゼロ拡張し、レジスタ ``dst`` に格納する。
 ``LDR``    ``dst src``       Load Register                       メモリアドレス ``src`` から値(32ビットまたは64ビット)をloadし、レジスタ ``dst`` に格納する。
-``LDRSW``  ``dst src``       Load Register Signed Word           メモリアドレス ``src`` から値(32ビット)をloadし、符号拡張し、レジスタ ``dst`` に格納する。
-``LDRSH``  ``dst src``       Load Register Signed Halfword       メモリアドレス ``src`` から値(16ビット)をloadし、符号拡張し、レジスタ ``dst`` に格納する。
 ``LDRSB``  ``dst src``       Load Register Signed Byte           メモリアドレス ``src`` から値(8ビット)をloadし、符号拡張し、レジスタ ``dst`` に格納する。
+``LDRSH``  ``dst src``       Load Register Signed Halfword       メモリアドレス ``src`` から値(16ビット)をloadし、符号拡張し、レジスタ ``dst`` に格納する。
+``LDRSW``  ``dst src``       Load Register Signed Word           メモリアドレス ``src`` から値(32ビット)をloadし、符号拡張し、レジスタ ``dst`` (64ビット)に格納する。
 ``LDP``    ``dst1 dst2 src`` Load Pair of Registers              メモリアドレス ``src`` から2つの値(32ビットまたは64ビット)をloadし、レジスタ ``dst1`` と ``dst2`` に格納する。
 ``LDP``    ``dst1 dst2 src`` Load Pair of SIMD and FP Registers  メモリアドレス ``src`` から2つの値をloadし、FP/SIMDレジスタ ``dst1`` と ``dst2`` に格納する。
-``LDPSW``  ``dst1 dst2 src`` Load Pair of Registers Signed Word  メモリアドレス ``src`` から2つの値(32ビット)をloadし、符号拡張し、レジスタ ``dst1`` と ``dst2`` に格納する。
-========== ================= =================================== ==============================================================================================================
+``LDPSW``  ``dst1 dst2 src`` Load Pair of Registers Signed Word  メモリアドレス ``src`` から2つの値(32ビット)をloadし、符号拡張し、レジスタ ``dst1`` と ``dst2`` (64ビット)に格納する。
+========== ================= =================================== ======================================================================================================================
 
 Store
 -----
@@ -294,17 +299,22 @@ Mnemonic   Operand           Brief Description                             Meani
 ``SUB``    ``dst src1 src2`` Subtract (register)                 レジスタ ``src1`` の値とレジスタ ``src2`` の値の差をレジスタ ``dst`` に格納する。
 ``SUBS``   ``dst src imm``   Subtract (immediate), setting flags レジスタ ``src`` の値と即値 ``imm`` の差をレジスタ ``dst`` に格納し、条件フラグを設定する。
 ``SUBS``   ``dst src1 src2`` Subtract (register), setting flags  レジスタ ``src1`` の値とレジスタ ``src2`` の値の差をレジスタ ``dst`` に格納し、条件フラグを設定する。
+``CMP``    ``src imm``       Compare (immediate)                 レジスタ ``src`` の値と即値 ``imm`` の差を計算し、条件フラグを設定する。
+``CMP``    ``src1 src2``     Compare (register)                  レジスタ ``src1`` の値とレジスタ ``src2`` の値 の差を計算し、条件フラグを設定する。
+``CMN``    ``src imm``       Compare Negative (immediate)        レジスタ ``src`` の値と即値 ``imm`` の和を計算し、条件フラグを設定する。
+``CMN``    ``src1 src2``     Compare Negative (register)         レジスタ ``src1`` の値とレジスタ ``src2`` の値 の和を計算し、条件フラグを設定する。
 ========== ================= =================================== =====================================================================================================
-
-.. ToDo: ``CMP``, ``CMN`` を追加する
 
 上記でBrief Descriptionに "(register)" と書いた命令には、実際には
 "(shifted register)" と "(extended register)" の2つの命令が存在する。
 shifted registerは、追加のoperandで指定された通り、 ``src2`` をビットシフト
 (LSL (論理左シフト)またはLSR (論理右シフト)またはASR (算術右シフト)してから、
-``src1`` との和を取る。
+``src1`` との和や差を計算する。
 extended registerは、追加のoperandで指定された通り、``src2`` を符号拡張と
-ビットシフト(LSR (論理右シフト))してから、 ``src1`` との和を取る。
+ビットシフト(LSR (論理右シフト))してから、 ``src1`` との和や差を計算する。
+
+``CMP`` と ``CMN`` はそれぞれ、``dst`` をゼロレジスタWZRとした場合の
+``SUBS`` と ``ADDS`` と同じである。
 
 Logical
 -------
@@ -350,7 +360,7 @@ Register  Special Role in the procedure call standard
 SP        \       The Stack Pointer.
 r30       LR      The Link Register.
 r29       FP      The Frame Pointer
-r19...r28 \       Callee-saved registers.
+r19 - r28 \       Callee-saved registers.
 r18       \       The Platform Register, if needed;
                   otherwise a temporary register.
 r17       IP1     The second intra-procedure-call temporary register
@@ -359,10 +369,30 @@ r17       IP1     The second intra-procedure-call temporary register
 r16       IP0     The first intra-procedure-call scratch register
                   (can be used by call veneers and PLT code);
                   at other times may be used as a temporary register.
-r9...r15  \       Temporary registers
+r9 - r15  \       Temporary registers
 r8        \       Indirect result location register
-r0...r7   \       Parameter/result registers
+r0 - r7   \       Parameter/result registers
 ========= ======= ===================================================
+
+r0からr30はそれぞれ、X0からX30またはW0からW30に該当する。
+
+サブルーチンを呼び出すときは、以下のようにする。
+
+- r0 - r7の8個のレジスタには、サブルーチンの最初の最大8つの引数を格納する。
+- r9 - r15の17個のレジスタは、サブルーチンの復帰時に内容が保証されないので、
+  必要であれば値をメモリなどに退避する。
+
+サブルーチンを実行しているときは、以下のようにする。
+
+- r0 - r7の8個のレジスタから、サブルーチンの最初の8つの引数を取り出す。
+- r19 - r28の10個のレジスタは、作業用に使用するのであれば値をメモリなどに
+  退避する。
+
+サブルーチンを終了するときは、以下のようにする。
+
+- r19 - r28の10個のレジスタは、作業用に使用したのであれば値を復旧する。
+
+.. ToDo: 他の汎用レジスタについて説明を記載する
 
 アセンブリコードの読み方
 ========================
