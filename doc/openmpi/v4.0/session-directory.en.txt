@@ -1,0 +1,209 @@
+################################################################
+Session Directory
+################################################################
+
+.. style: docutils-report
+
+`Open MPI <https://www.open-mpi.org/>`_ uses some temporary files during its exectution.
+Some files are used by one process and some files are shared among processes.
+One example which is shared among processes is a backing file of a shared memory.
+
+Temporary files are usually put in a temporary directory, called **session directory**.
+The are some types in session directories depending on their life cycle and scope.
+Using session directories, temporary files are reliably cleaned up even if MPI processes terminates abnormally.
+
+Open MPI supports many types of process management.
+For example, Open MPI can run with `Slurm <https://slurm.schedmd.com/>`_ and `LSF <https://www.ibm.com/us-en/marketplace/hpc-workload-management>`_.
+This document describes session directories in the default Open MPI built-in process management manner (``orterun`` + ``orted``) as of Open MPI 4.0.
+
+.. contents::
+
+Terms
+=====
+
+Before explaining about session directories, I need to explain some terms used in Open MPI.
+
+Job
+  A job is a group of processes spawned at the same time.
+  In terms of MPI, a job is a group of processes which can communicate using the ``MPI_COMM_WORLD`` communicator.
+  The ``mpiexec`` command creates a job of MPI processes when it is executed and the ``MPI_COMM_SPAWN`` routine creates a job when it is called.
+  Also, the ``orterun`` process and ``orted`` processes spawned from the ``orterun`` process form a job.
+  Each job has a unique ID called job ID.
+Job Family
+  A job family is a group of jobs created from one ``mpiexec`` process directly or indirectly.
+  In terms of MPI, if processes in a job call the ``MPI_COMM_SPAWN`` routine, calling processes and spawned processes are in the same job family.
+  Also, the ``orterun`` process, ``orted`` processes spawned from the ``orterun`` process, and MPI processes spawned by them are in the same job family.
+  Each job family has a unique ID called job family ID.
+``orterun``
+  ``orterun`` is an alias of ``mpiexec`` in Open MPI.
+  To be exact, the ``mpiexec`` and ``mpirun`` commands are symbolic links of the ``orterun`` command.
+``orted``
+  ``orted`` is a daemon of Open MPI and manages life cycle of MPI processes in each host.
+  When the ``orterun`` (``mpiexec``) command is executed on a host, the ``orterun`` process connects to all hosts listed in a hostfile using SSH and spawns ``orted`` daemons on the hosts.
+  The ``orted`` daemon is not spawned on the host where the ``orterun`` command is executed because the ``orterun`` process has the same role as the ``orted`` process.
+
+The followng figure shows these relations.
+In this figure, ``mpiexec -n 6 --hostfile hostfile A`` is executed and three hosts are listed in ``hostfile``.
+And ``MPI_COMM_SPAWN(command="B", maxprocs=4)`` is called in the MPI program ``A``.
+::
+
+                                    job family
+   _____________________________________________________________________________
+  /                                                                             \
+
+  .-----------------------.  .-----------------------.  .-----------------------.
+  |  ,-------. ,-------.  |  |  ,-------. ,-------.  |  |                       |  \
+  |  | MPI B | | MPI B |  |  |  | MPI B | | MPI B |  |  |                       |   | job
+  |  `-------' `-------'  |  |  `-------' `-------'  |  |                       |  /
+  |      |         |      |  |      |         |      |  |                       |
+  |  ,-------. ,-------.  |  |  ,-------. ,-------.  |  |  ,-------. ,-------.  |  \
+  |  | MPI A | | MPI A |  |  |  | MPI A | | MPI A |  |  |  | MPI A | | MPI A |  |   | job
+  |  `-------' `-------'  |  |  `-------' `-------'  |  |  `-------' `-------'  |  /
+  |      |         |      |  |      |         |      |  |      |         |      |
+  |  ,-----------------.  |  |  ,-----------------.  |  |  ,-----------------.  |  \
+  |  |      orted      |--|--|--|     orterun     |--|--|--|      orted      |  |   | job
+  |  `-----------------'  |  |  `-----------------'  |  |  `-----------------'  |  /
+  `-----------------------'  `-----------------------'  `-----------------------'
+            host                       host                       host
+
+Types of Session Directories
+============================
+
+Top Session Directory
+---------------------
+
+A top session directory is created per host and user.
+If a user executes the ``mpiexec`` command more than once, all processes of the user share a top session directory in each host.
+A top session directory is created when ``orterun`` or ``orted`` is executed and it does not exist on the host yet.
+The top session directory is deleted with all directories and files in it when the ``orterun`` or ``orted`` process terminates and no other ``orterun`` or ``orted`` processes exist on the host.
+
+Job Family Session Directory
+----------------------------
+
+A job family session directory is created per job family in a top session directory when ``orterun`` or ``orted`` is executed.
+The job family session directory is deleted with all directories and files in it when the ``orterun`` or ``orted`` process terminates.
+
+Job Session Directory
+---------------------
+
+A job session directory is created per job in a job family session directory.
+
+Process Session Directory
+-------------------------
+
+A process session directory is created per MPI process in a job session directory.
+
+Paths of Session Directories
+============================
+
+Path of a Base Temporary Directory
+----------------------------------
+
+Base Temporary Directory in ``orterun`` and ``orted``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before locating a session directory, a base temporary directroy is located.
+
+A default base temporary directroy is selected from the following paths in ``orterun`` and ``orted``.
+This logic is implemented in the ``_setup_tmpdir_base`` function in the ``orte/util/session_dir.c`` file.
+
+1. Value of the environment variable ``TMPDIR`` if it is set
+2. Value of the environment variable ``TEMP`` if it is set
+3. Value of the environment variable ``TMP`` if it is set
+4. ``/tmp``
+
+A base temporary directroy can be configured by the MCA parameter ``orte_tmpdir_base``.
+Alternatively, base temporary directries for ``orterun`` and ``orted`` can be configured by the MCA parameters ``local_orte_tmpdir_base`` and ``remote_orte_tmpdir_base``, respectively.
+This logic is implemented in the ``orte_register_params`` function in the ``orte/runtime/orte_mca_params.c`` file.
+
+Base Temporary Directory in an MPI Process
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The base temporary directroy selected by ``orterun`` or ``orted`` is passed to MPI processes via the MCA parameter ``orte_tmpdir_base``.
+
+If the MCA parameter is not passed to an MPI process, the same selection logic as ``orterun`` and ``orted`` is applied.
+
+Path of a Top Session Directory
+-------------------------------
+
+Top Session Directory in ``orterun`` and ``orted``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, the path of the top session directory is located in the following directory in ``orterun`` and ``orted``, where ``TMPDIR`` is a base temporary directory, ``HOSTNAME`` is a hostname, and ``EUID`` is an effective user ID.
+This logic is implemented in the ``orte_setup_top_session_dir`` function in the ``orte/util/session_dir.c`` file.
+::
+
+  TMPDIR/ompi.HOSTNAME.EUID
+
+A base temporary directroy can be configured by the MCA parameter ``orte_top_session_dir``.
+This logic is implemented in the ``orte_register_params`` function in the ``orte/runtime/orte_mca_params.c`` file.
+
+Top Session Directory in an MPI Process
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The selected top session directory is passed to MPI processes from ``orterun`` or ``orted`` via the MCA parameter ``orte_top_session_dir``.
+This logic is implemented in the ``setup_fork`` function in the ``orte/mca/schizo/ompi/schizo_ompi.c`` file.
+
+If the PMIx attribute ``pmix.tmpdir`` is set, its value is used as the top session directory instead.
+This logic is implemented in the ``rte_init`` function in the ``orte/mca/ess/pmi/ess_pmi_module.c`` file.
+
+If the MCA parameter or the PMIx attribute is not passed to an MPI process, the same selection logic as ``orterun`` and ``orted`` is applied.
+
+Path of a Job Family Session Directory
+--------------------------------------
+
+Job Family Session Directory in ``orterun`` and ``orted``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, the path of the job family directory is located in the following directory in ``orterun``, where ``TOPSESSIONDIR`` is a top session directory and ``JOBFAMILYID`` is a job family ID.
+This logic is implemented in the ``_setup_jobfam_session_dir`` function in the ``orte/util/session_dir.c`` file.
+::
+
+  TOPSESSIONDIR/pid.JOBFAMILYID
+
+By default, the path of the job family directory is located in the following directory in ``orted``, where ``TOPSESSIONDIR`` is a top session directory and ``JOBFAMILYID`` is a job family ID.
+This logic is implemented in the ``_setup_jobfam_session_dir`` function in the ``orte/util/session_dir.c`` file.
+::
+
+  TOPSESSIONDIR/jf.JOBFAMILYID
+
+A base temporary directroy can be configured by the MCA parameter ``orte_jobfam_session_dir``.
+This logic is implemented in the ``orte_register_params`` function in the ``orte/runtime/orte_mca_params.c`` file.
+
+Job Family Session Directory in an MPI Process
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+MPI processes are in the same job family of ``orterun`` and ``orted`` which created them.
+The selected job family directory is passed to MPI processes from ``orterun`` or ``orted`` via the MCA parameter ``orte_jobfam_session_dir``.
+This logic is implemented in the ``setup_fork`` function in the ``orte/mca/schizo/ompi/schizo_ompi.c`` file.
+
+If the MCA parameter is not passed to an MPI process, the same selection logic as ``orterun`` and ``orted`` is applied.
+
+Path of a Job Session Directory
+-------------------------------
+
+The path of the job session directory is located in the following directory in each process, where ``JOBFAMILYSESSIONDIR`` is a job family session directory and ``JOBID`` is a job ID.
+This logic is implemented in the ``_setup_job_session_dir`` function in the ``orte/util/session_dir.c`` file.
+::
+
+  JOBFAMILYSESSIONDIR/JOBID
+
+In an MPI process, if the PMIx attribute ``pmix.nsdir`` is set, its value is used as the job session directory instead.
+This logic is implemented in the ``rte_init`` function in the ``orte/mca/ess/pmi/ess_pmi_module.c`` file.
+
+MPI processes are *not* in the same job of ``orterun`` and ``orted`` which created them.
+Therefore the job session directory of ``orterun`` and ``orted`` is not passed to MPI processes.
+
+Path of a Process Session Directory
+-----------------------------------
+
+The path of the process session directory is located in the following directory in each process, where ``JOBSESSIONDIR`` is a job session directory and ``VPID`` is a process ID managed in ``orterun`` and ``orted`` (same as a *rank* in the ``MPI_COMM_WORLD`` for MPI processes).
+This logic is implemented in the ``_setup_proc_session_dir`` function in the ``orte/util/session_dir.c`` file.
+::
+
+  JOBSESSIONDIR/VPID
+
+In an MPI process, if the PMIx attribute ``pmix.pdir`` is set, its value is used as the process session directory instead.
+This logic is implemented in the ``rte_init`` function in the ``orte/mca/ess/pmi/ess_pmi_module.c`` file.
+
+.. header:: Back to: `[Notes on Open MPI Source Reading] <../openmpi-source-reading.en.xhtml>`_

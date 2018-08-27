@@ -29,6 +29,10 @@ is also available.
 
   * `MPI_INIT (Open MPI 2.0) <./v2.0/mpi-init-sequence.txt>`_
 
+- Files and Directories
+
+  * `Session directory (Open MPI 4.0) <./v4.0/session-directory.en.xhtml>`_
+
 - Communication Protocols
 
   * `ob1 PML (Open MPI 2.1) <./v2.1/pml-ob1-protocols.en.xhtml>`_

@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="generator" content="Docutils 0.13.1: http://docutils.sourceforge.net/" />
+    <title>Session Directory</title>
+    <link rel="stylesheet" href="../../../css/docutils-report.css" type="text/css" />
+  </head>
+  <body>
+    <div class="header">
+Back to: <a class="reference external" href="../openmpi-source-reading.en.xhtml">[Notes on Open MPI Source Reading]</a>
+<hr class="header" />
+</div>
+    <div class="document" id="session-directory">
+      <h1 class="title">Session Directory</h1>
+<!-- style: docutils-report -->
+      <p><a class="reference external" href="https://www.open-mpi.org/">Open MPI</a> uses some temporary files during its exectution.
+Some files are used by one process and some files are shared among processes.
+One example which is shared among processes is a backing file of a shared memory.</p>
+      <p>Temporary files are usually put in a temporary directory, called <strong>session directory</strong>.
+The are some types in session directories depending on their life cycle and scope.
+Using session directories, temporary files are reliably cleaned up even if MPI processes terminates abnormally.</p>
+      <p>Open MPI supports many types of process management.
+For example, Open MPI can run with <a class="reference external" href="https://slurm.schedmd.com/">Slurm</a> and <a class="reference external" href="https://www.ibm.com/us-en/marketplace/hpc-workload-management">LSF</a>.
+This document describes session directories in the default Open MPI built-in process management manner (<tt class="docutils literal">orterun</tt> + <tt class="docutils literal">orted</tt>) as of Open MPI 4.0.</p>
+      <div class="contents topic" id="contents">
+        <p class="topic-title first">Contents</p>
+        <ul class="simple">
+          <li>
+            <a class="reference internal" href="#terms" id="id1">Terms</a>
+          </li>
+          <li>
+            <a class="reference internal" href="#types-of-session-directories" id="id2">Types of Session Directories</a>
+            <ul>
+              <li>
+                <a class="reference internal" href="#top-session-directory" id="id3">Top Session Directory</a>
+              </li>
+              <li>
+                <a class="reference internal" href="#job-family-session-directory" id="id4">Job Family Session Directory</a>
+              </li>
+              <li>
+                <a class="reference internal" href="#job-session-directory" id="id5">Job Session Directory</a>
+              </li>
+              <li>
+                <a class="reference internal" href="#process-session-directory" id="id6">Process Session Directory</a>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <a class="reference internal" href="#paths-of-session-directories" id="id7">Paths of Session Directories</a>
+            <ul>
+              <li>
+                <a class="reference internal" href="#path-of-a-base-temporary-directory" id="id8">Path of a Base Temporary Directory</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#base-temporary-directory-in-orterun-and-orted" id="id9">Base Temporary Directory in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt></a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#base-temporary-directory-in-an-mpi-process" id="id10">Base Temporary Directory in an MPI Process</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#path-of-a-top-session-directory" id="id11">Path of a Top Session Directory</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#top-session-directory-in-orterun-and-orted" id="id12">Top Session Directory in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt></a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#top-session-directory-in-an-mpi-process" id="id13">Top Session Directory in an MPI Process</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#path-of-a-job-family-session-directory" id="id14">Path of a Job Family Session Directory</a>
+                <ul>
+                  <li>
+                    <a class="reference internal" href="#job-family-session-directory-in-orterun-and-orted" id="id15">Job Family Session Directory in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt></a>
+                  </li>
+                  <li>
+                    <a class="reference internal" href="#job-family-session-directory-in-an-mpi-process" id="id16">Job Family Session Directory in an MPI Process</a>
+                  </li>
+                </ul>
+              </li>
+              <li>
+                <a class="reference internal" href="#path-of-a-job-session-directory" id="id17">Path of a Job Session Directory</a>
+              </li>
+              <li>
+                <a class="reference internal" href="#path-of-a-process-session-directory" id="id18">Path of a Process Session Directory</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="section" id="terms">
+        <h1>
+          <a class="toc-backref" href="#id1">Terms</a>
+        </h1>
+        <p>Before explaining about session directories, I need to explain some terms used in Open MPI.</p>
+        <dl class="docutils">
+          <dt>Job</dt>
+          <dd>A job is a group of processes spawned at the same time.
+In terms of MPI, a job is a group of processes which can communicate using the <tt class="docutils literal">MPI_COMM_WORLD</tt> communicator.
+The <tt class="docutils literal">mpiexec</tt> command creates a job of MPI processes when it is executed and the <tt class="docutils literal">MPI_COMM_SPAWN</tt> routine creates a job when it is called.
+Also, the <tt class="docutils literal">orterun</tt> process and <tt class="docutils literal">orted</tt> processes spawned from the <tt class="docutils literal">orterun</tt> process form a job.
+Each job has a unique ID called job ID.</dd>
+          <dt>Job Family</dt>
+          <dd>A job family is a group of jobs created from one <tt class="docutils literal">mpiexec</tt> process directly or indirectly.
+In terms of MPI, if processes in a job call the <tt class="docutils literal">MPI_COMM_SPAWN</tt> routine, calling processes and spawned processes are in the same job family.
+Also, the <tt class="docutils literal">orterun</tt> process, <tt class="docutils literal">orted</tt> processes spawned from the <tt class="docutils literal">orterun</tt> process, and MPI processes spawned by them are in the same job family.
+Each job family has a unique ID called job family ID.</dd>
+          <dt>
+            <tt class="docutils literal">orterun</tt>
+          </dt>
+          <dd><tt class="docutils literal">orterun</tt> is an alias of <tt class="docutils literal">mpiexec</tt> in Open MPI.
+To be exact, the <tt class="docutils literal">mpiexec</tt> and <tt class="docutils literal">mpirun</tt> commands are symbolic links of the <tt class="docutils literal">orterun</tt> command.</dd>
+          <dt>
+            <tt class="docutils literal">orted</tt>
+          </dt>
+          <dd><tt class="docutils literal">orted</tt> is a daemon of Open MPI and manages life cycle of MPI processes in each host.
+When the <tt class="docutils literal">orterun</tt> (<tt class="docutils literal">mpiexec</tt>) command is executed on a host, the <tt class="docutils literal">orterun</tt> process connects to all hosts listed in a hostfile using SSH and spawns <tt class="docutils literal">orted</tt> daemons on the hosts.
+The <tt class="docutils literal">orted</tt> daemon is not spawned on the host where the <tt class="docutils literal">orterun</tt> command is executed because the <tt class="docutils literal">orterun</tt> process has the same role as the <tt class="docutils literal">orted</tt> process.</dd>
+        </dl>
+        <p>The followng figure shows these relations.
+In this figure, <tt class="docutils literal">mpiexec <span class="pre">-n</span> 6 <span class="pre">--hostfile</span> hostfile A</tt> is executed and three hosts are listed in <tt class="docutils literal">hostfile</tt>.
+And <tt class="docutils literal"><span class="pre">MPI_COMM_SPAWN(command="B",</span> maxprocs=4)</tt> is called in the MPI program <tt class="docutils literal">A</tt>.</p>
+        <pre class="literal-block">
+                                  job family
+ _____________________________________________________________________________
+/                                                                             \
+
+.-----------------------.  .-----------------------.  .-----------------------.
+|  ,-------. ,-------.  |  |  ,-------. ,-------.  |  |                       |  \
+|  | MPI B | | MPI B |  |  |  | MPI B | | MPI B |  |  |                       |   | job
+|  `-------' `-------'  |  |  `-------' `-------'  |  |                       |  /
+|      |         |      |  |      |         |      |  |                       |
+|  ,-------. ,-------.  |  |  ,-------. ,-------.  |  |  ,-------. ,-------.  |  \
+|  | MPI A | | MPI A |  |  |  | MPI A | | MPI A |  |  |  | MPI A | | MPI A |  |   | job
+|  `-------' `-------'  |  |  `-------' `-------'  |  |  `-------' `-------'  |  /
+|      |         |      |  |      |         |      |  |      |         |      |
+|  ,-----------------.  |  |  ,-----------------.  |  |  ,-----------------.  |  \
+|  |      orted      |--|--|--|     orterun     |--|--|--|      orted      |  |   | job
+|  `-----------------'  |  |  `-----------------'  |  |  `-----------------'  |  /
+`-----------------------'  `-----------------------'  `-----------------------'
+          host                       host                       host
+</pre>
+      </div>
+      <div class="section" id="types-of-session-directories">
+        <h1>
+          <a class="toc-backref" href="#id2">Types of Session Directories</a>
+        </h1>
+        <div class="section" id="top-session-directory">
+          <h2>
+            <a class="toc-backref" href="#id3">Top Session Directory</a>
+          </h2>
+          <p>A top session directory is created per host and user.
+If a user executes the <tt class="docutils literal">mpiexec</tt> command more than once, all processes of the user share a top session directory in each host.
+A top session directory is created when <tt class="docutils literal">orterun</tt> or <tt class="docutils literal">orted</tt> is executed and it does not exist on the host yet.
+The top session directory is deleted with all directories and files in it when the <tt class="docutils literal">orterun</tt> or <tt class="docutils literal">orted</tt> process terminates and no other <tt class="docutils literal">orterun</tt> or <tt class="docutils literal">orted</tt> processes exist on the host.</p>
+        </div>
+        <div class="section" id="job-family-session-directory">
+          <h2>
+            <a class="toc-backref" href="#id4">Job Family Session Directory</a>
+          </h2>
+          <p>A job family session directory is created per job family in a top session directory when <tt class="docutils literal">orterun</tt> or <tt class="docutils literal">orted</tt> is executed.
+The job family session directory is deleted with all directories and files in it when the <tt class="docutils literal">orterun</tt> or <tt class="docutils literal">orted</tt> process terminates.</p>
+        </div>
+        <div class="section" id="job-session-directory">
+          <h2>
+            <a class="toc-backref" href="#id5">Job Session Directory</a>
+          </h2>
+          <p>A job session directory is created per job in a job family session directory.</p>
+        </div>
+        <div class="section" id="process-session-directory">
+          <h2>
+            <a class="toc-backref" href="#id6">Process Session Directory</a>
+          </h2>
+          <p>A process session directory is created per MPI process in a job session directory.</p>
+        </div>
+      </div>
+      <div class="section" id="paths-of-session-directories">
+        <h1>
+          <a class="toc-backref" href="#id7">Paths of Session Directories</a>
+        </h1>
+        <div class="section" id="path-of-a-base-temporary-directory">
+          <h2>
+            <a class="toc-backref" href="#id8">Path of a Base Temporary Directory</a>
+          </h2>
+          <div class="section" id="base-temporary-directory-in-orterun-and-orted">
+            <h3>
+              <a class="toc-backref" href="#id9">Base Temporary Directory in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt></a>
+            </h3>
+            <p>Before locating a session directory, a base temporary directroy is located.</p>
+            <p>A default base temporary directroy is selected from the following paths in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt>.
+This logic is implemented in the <tt class="docutils literal">_setup_tmpdir_base</tt> function in the <tt class="docutils literal">orte/util/session_dir.c</tt> file.</p>
+            <ol class="arabic simple">
+              <li>Value of the environment variable <tt class="docutils literal">TMPDIR</tt> if it is set</li>
+              <li>Value of the environment variable <tt class="docutils literal">TEMP</tt> if it is set</li>
+              <li>Value of the environment variable <tt class="docutils literal">TMP</tt> if it is set</li>
+              <li>
+                <tt class="docutils literal">/tmp</tt>
+              </li>
+            </ol>
+            <p>A base temporary directroy can be configured by the MCA parameter <tt class="docutils literal">orte_tmpdir_base</tt>.
+Alternatively, base temporary directries for <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt> can be configured by the MCA parameters <tt class="docutils literal">local_orte_tmpdir_base</tt> and <tt class="docutils literal">remote_orte_tmpdir_base</tt>, respectively.
+This logic is implemented in the <tt class="docutils literal">orte_register_params</tt> function in the <tt class="docutils literal">orte/runtime/orte_mca_params.c</tt> file.</p>
+          </div>
+          <div class="section" id="base-temporary-directory-in-an-mpi-process">
+            <h3>
+              <a class="toc-backref" href="#id10">Base Temporary Directory in an MPI Process</a>
+            </h3>
+            <p>The base temporary directroy selected by <tt class="docutils literal">orterun</tt> or <tt class="docutils literal">orted</tt> is passed to MPI processes via the MCA parameter <tt class="docutils literal">orte_tmpdir_base</tt>.</p>
+            <p>If the MCA parameter is not passed to an MPI process, the same selection logic as <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt> is applied.</p>
+          </div>
+        </div>
+        <div class="section" id="path-of-a-top-session-directory">
+          <h2>
+            <a class="toc-backref" href="#id11">Path of a Top Session Directory</a>
+          </h2>
+          <div class="section" id="top-session-directory-in-orterun-and-orted">
+            <h3>
+              <a class="toc-backref" href="#id12">Top Session Directory in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt></a>
+            </h3>
+            <p>By default, the path of the top session directory is located in the following directory in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt>, where <tt class="docutils literal">TMPDIR</tt> is a base temporary directory, <tt class="docutils literal">HOSTNAME</tt> is a hostname, and <tt class="docutils literal">EUID</tt> is an effective user ID.
+This logic is implemented in the <tt class="docutils literal">orte_setup_top_session_dir</tt> function in the <tt class="docutils literal">orte/util/session_dir.c</tt> file.</p>
+            <pre class="literal-block">
+TMPDIR/ompi.HOSTNAME.EUID
+</pre>
+            <p>A base temporary directroy can be configured by the MCA parameter <tt class="docutils literal">orte_top_session_dir</tt>.
+This logic is implemented in the <tt class="docutils literal">orte_register_params</tt> function in the <tt class="docutils literal">orte/runtime/orte_mca_params.c</tt> file.</p>
+          </div>
+          <div class="section" id="top-session-directory-in-an-mpi-process">
+            <h3>
+              <a class="toc-backref" href="#id13">Top Session Directory in an MPI Process</a>
+            </h3>
+            <p>The selected top session directory is passed to MPI processes from <tt class="docutils literal">orterun</tt> or <tt class="docutils literal">orted</tt> via the MCA parameter <tt class="docutils literal">orte_top_session_dir</tt>.
+This logic is implemented in the <tt class="docutils literal">setup_fork</tt> function in the <tt class="docutils literal">orte/mca/schizo/ompi/schizo_ompi.c</tt> file.</p>
+            <p>If the PMIx attribute <tt class="docutils literal">pmix.tmpdir</tt> is set, its value is used as the top session directory instead.
+This logic is implemented in the <tt class="docutils literal">rte_init</tt> function in the <tt class="docutils literal">orte/mca/ess/pmi/ess_pmi_module.c</tt> file.</p>
+            <p>If the MCA parameter or the PMIx attribute is not passed to an MPI process, the same selection logic as <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt> is applied.</p>
+          </div>
+        </div>
+        <div class="section" id="path-of-a-job-family-session-directory">
+          <h2>
+            <a class="toc-backref" href="#id14">Path of a Job Family Session Directory</a>
+          </h2>
+          <div class="section" id="job-family-session-directory-in-orterun-and-orted">
+            <h3>
+              <a class="toc-backref" href="#id15">Job Family Session Directory in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt></a>
+            </h3>
+            <p>By default, the path of the job family directory is located in the following directory in <tt class="docutils literal">orterun</tt>, where <tt class="docutils literal">TOPSESSIONDIR</tt> is a top session directory and <tt class="docutils literal">JOBFAMILYID</tt> is a job family ID.
+This logic is implemented in the <tt class="docutils literal">_setup_jobfam_session_dir</tt> function in the <tt class="docutils literal">orte/util/session_dir.c</tt> file.</p>
+            <pre class="literal-block">
+TOPSESSIONDIR/pid.JOBFAMILYID
+</pre>
+            <p>By default, the path of the job family directory is located in the following directory in <tt class="docutils literal">orted</tt>, where <tt class="docutils literal">TOPSESSIONDIR</tt> is a top session directory and <tt class="docutils literal">JOBFAMILYID</tt> is a job family ID.
+This logic is implemented in the <tt class="docutils literal">_setup_jobfam_session_dir</tt> function in the <tt class="docutils literal">orte/util/session_dir.c</tt> file.</p>
+            <pre class="literal-block">
+TOPSESSIONDIR/jf.JOBFAMILYID
+</pre>
+            <p>A base temporary directroy can be configured by the MCA parameter <tt class="docutils literal">orte_jobfam_session_dir</tt>.
+This logic is implemented in the <tt class="docutils literal">orte_register_params</tt> function in the <tt class="docutils literal">orte/runtime/orte_mca_params.c</tt> file.</p>
+          </div>
+          <div class="section" id="job-family-session-directory-in-an-mpi-process">
+            <h3>
+              <a class="toc-backref" href="#id16">Job Family Session Directory in an MPI Process</a>
+            </h3>
+            <p>MPI processes are in the same job family of <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt> which created them.
+The selected job family directory is passed to MPI processes from <tt class="docutils literal">orterun</tt> or <tt class="docutils literal">orted</tt> via the MCA parameter <tt class="docutils literal">orte_jobfam_session_dir</tt>.
+This logic is implemented in the <tt class="docutils literal">setup_fork</tt> function in the <tt class="docutils literal">orte/mca/schizo/ompi/schizo_ompi.c</tt> file.</p>
+            <p>If the MCA parameter is not passed to an MPI process, the same selection logic as <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt> is applied.</p>
+          </div>
+        </div>
+        <div class="section" id="path-of-a-job-session-directory">
+          <h2>
+            <a class="toc-backref" href="#id17">Path of a Job Session Directory</a>
+          </h2>
+          <p>The path of the job session directory is located in the following directory in each process, where <tt class="docutils literal">JOBFAMILYSESSIONDIR</tt> is a job family session directory and <tt class="docutils literal">JOBID</tt> is a job ID.
+This logic is implemented in the <tt class="docutils literal">_setup_job_session_dir</tt> function in the <tt class="docutils literal">orte/util/session_dir.c</tt> file.</p>
+          <pre class="literal-block">
+JOBFAMILYSESSIONDIR/JOBID
+</pre>
+          <p>In an MPI process, if the PMIx attribute <tt class="docutils literal">pmix.nsdir</tt> is set, its value is used as the job session directory instead.
+This logic is implemented in the <tt class="docutils literal">rte_init</tt> function in the <tt class="docutils literal">orte/mca/ess/pmi/ess_pmi_module.c</tt> file.</p>
+          <p>MPI processes are <em>not</em> in the same job of <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt> which created them.
+Therefore the job session directory of <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt> is not passed to MPI processes.</p>
+        </div>
+        <div class="section" id="path-of-a-process-session-directory">
+          <h2>
+            <a class="toc-backref" href="#id18">Path of a Process Session Directory</a>
+          </h2>
+          <p>The path of the process session directory is located in the following directory in each process, where <tt class="docutils literal">JOBSESSIONDIR</tt> is a job session directory and <tt class="docutils literal">VPID</tt> is a process ID managed in <tt class="docutils literal">orterun</tt> and <tt class="docutils literal">orted</tt> (same as a <em>rank</em> in the <tt class="docutils literal">MPI_COMM_WORLD</tt> for MPI processes).
+This logic is implemented in the <tt class="docutils literal">_setup_proc_session_dir</tt> function in the <tt class="docutils literal">orte/util/session_dir.c</tt> file.</p>
+          <pre class="literal-block">
+JOBSESSIONDIR/VPID
+</pre>
+          <p>In an MPI process, if the PMIx attribute <tt class="docutils literal">pmix.pdir</tt> is set, its value is used as the process session directory instead.
+This logic is implemented in the <tt class="docutils literal">rte_init</tt> function in the <tt class="docutils literal">orte/mca/ess/pmi/ess_pmi_module.c</tt> file.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
