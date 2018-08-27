@@ -23,7 +23,7 @@ is also available.
 
 - Dependency Graphs
 
-  * `Fortran source files <./v2.1/fortran-file-dependencies.en.xhtml>`_
+  * `Fortran source files (Open MPI 2.1) <./v2.1/fortran-file-dependencies.en.xhtml>`_
 
 - Call Sequences of Functions
 
