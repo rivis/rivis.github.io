@@ -4,7 +4,7 @@ Session Directory
 
 .. style: docutils-report
 
-`Open MPI <https://www.open-mpi.org/>`_ uses some temporary files during its exectution.
+`Open MPI <https://www.open-mpi.org/>`_ uses some temporary files during its execution.
 Some files are used by one process and some files are shared among processes.
 One example which is shared among processes is a backing file of a shared memory.
 
@@ -42,7 +42,7 @@ Job Family
   When the ``orterun`` (``mpiexec``) command is executed on a host, the ``orterun`` process connects to all hosts listed in a hostfile using SSH and spawns ``orted`` daemons on the hosts.
   The ``orted`` daemon is not spawned on the host where the ``orterun`` command is executed because the ``orterun`` process has the same role as the ``orted`` process.
 
-The followng figure shows these relations.
+The following figure shows these relations.
 In this figure, ``mpiexec -n 6 --hostfile hostfile A`` is executed and three hosts are listed in ``hostfile``.
 And ``MPI_COMM_SPAWN(command="B", maxprocs=4)`` is called in the MPI program ``A``.
 ::
@@ -102,9 +102,9 @@ Path of a Base Temporary Directory
 Base Temporary Directory in ``orterun`` and ``orted``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Before locating a session directory, a base temporary directroy is located.
+Before locating a session directory, a base temporary directory is located.
 
-A default base temporary directroy is selected from the following paths in ``orterun`` and ``orted``.
+A default base temporary directory is selected from the following paths in ``orterun`` and ``orted``.
 This logic is implemented in the ``_setup_tmpdir_base`` function in the ``orte/util/session_dir.c`` file.
 
 1. Value of the environment variable ``TMPDIR`` if it is set
@@ -112,14 +112,14 @@ This logic is implemented in the ``_setup_tmpdir_base`` function in the ``orte/u
 3. Value of the environment variable ``TMP`` if it is set
 4. ``/tmp``
 
-A base temporary directroy can be configured by the MCA parameter ``orte_tmpdir_base``.
-Alternatively, base temporary directries for ``orterun`` and ``orted`` can be configured by the MCA parameters ``local_orte_tmpdir_base`` and ``remote_orte_tmpdir_base``, respectively.
+A base temporary directory can be configured by the MCA parameter ``orte_tmpdir_base``.
+Alternatively, base temporary directories for ``orterun`` and ``orted`` can be configured by the MCA parameters ``local_orte_tmpdir_base`` and ``remote_orte_tmpdir_base``, respectively.
 This logic is implemented in the ``orte_register_params`` function in the ``orte/runtime/orte_mca_params.c`` file.
 
 Base Temporary Directory in an MPI Process
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The base temporary directroy selected by ``orterun`` or ``orted`` is passed to MPI processes via the MCA parameter ``orte_tmpdir_base``.
+The base temporary directory selected by ``orterun`` or ``orted`` is passed to MPI processes via the MCA parameter ``orte_tmpdir_base``.
 
 If the MCA parameter is not passed to an MPI process, the same selection logic as ``orterun`` and ``orted`` is applied.
 
@@ -135,7 +135,7 @@ This logic is implemented in the ``orte_setup_top_session_dir`` function in the 
 
   TMPDIR/ompi.HOSTNAME.EUID
 
-A base temporary directroy can be configured by the MCA parameter ``orte_top_session_dir``.
+A base temporary directory can be configured by the MCA parameter ``orte_top_session_dir``.
 This logic is implemented in the ``orte_register_params`` function in the ``orte/runtime/orte_mca_params.c`` file.
 
 Top Session Directory in an MPI Process
@@ -167,7 +167,7 @@ This logic is implemented in the ``_setup_jobfam_session_dir`` function in the `
 
   TOPSESSIONDIR/jf.JOBFAMILYID
 
-A base temporary directroy can be configured by the MCA parameter ``orte_jobfam_session_dir``.
+A base temporary directory can be configured by the MCA parameter ``orte_jobfam_session_dir``.
 This logic is implemented in the ``orte_register_params`` function in the ``orte/runtime/orte_mca_params.c`` file.
 
 Job Family Session Directory in an MPI Process
