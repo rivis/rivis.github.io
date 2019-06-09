@@ -35,23 +35,21 @@ A64は、ARMv8-Aアーキテクチャ(およびそれ以降)のAArch64実行状�
 ------
 
 ARMv8-A, AArch64, A64を含むARMアーキテクチャの情報は、
-`ARM社のARM Infocenter <http://infocenter.arm.com/>`_ に存在する。
+`Arm Developerのサイト <https://developer.arm.com/docs>`_ に存在する。
 特に、ユーザ空間のアプリケーションで動作する一般的なプログラムの
 アセンブリコードを読むには、以下の文書が参考になるであろう。
 
-`ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture profile (英語) <https://developer.arm.com/docs/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile>`_
+`ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture profile (英語) <https://developer.arm.com/docs/ddi0487/latest/>`_
   ARMv8アーキテクチャにおけるデータ型、メモリモデル、レジスタ、
   命令セットなどの全体の説明がある。
-`ARM Compiler armasm User Guide (英語) <http://infocenter.arm.com/help/topic/com.arm.doc.100069_0607_00_en/index.html>`_
+`ARM Compiler armasm User Guide (英語) <https://developer.arm.com/docs/100069/latest/>`_
   A32、T32、A64のアセンブリ言語の記述や各命令の説明と、その説明に
   必要な状態(AArch32, AArch64)、レジスタ、条件コードなどの説明がある。
-`ARM コンパイラ armasm ユーザガイド (日本語) <http://infocenter.arm.com/help/topic/com.arm.doc.dui0801cj/index.html>`_
-  上記の文書の日本語版。
-`Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語) <http://infocenter.arm.com/help/topic/com.arm.doc.ihi0055c/index.html>`_
+`Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語) <https://developer.arm.com/docs/ihi0055/c/>`_
   AArch64のABI (Application Binary Interface)での手続き呼び出しの
   規約の説明がある。手続き呼び出し時にレジスタをどのように使うかなど。
 
-ただし、上記のリンクは2017年5月時点での最新バージョンへのリンクである。
+ただし、上記のリンクは2019年5月時点での最新バージョンへのリンクである。
 新しいバージョンの文書が存在する場合は、新しい方を参照した方がよい。
 
 前提となる知識
@@ -351,6 +349,16 @@ Mnemonic   Operand           Brief Description                                Me
 手続き呼び出し規約
 ==================
 
+呼び出し・復帰命令
+------------------
+
+``BL`` 命令と ``BLR`` 命令は、サブルーチンの戻り先のアドレス、つまり
+現在(``BL`` 命令または ``BLR`` 命令)のプログラムカウンタの次の値を、
+LRレジスタに格納する。
+その後、プログラムカウンタを指定されたアドレスに更新する。
+
+``RET`` 命令は、プログラムカウンタをLRレジスタの値に更新する。
+
 汎用レジスタ
 ------------
 
@@ -376,23 +384,54 @@ r0 - r7   \       Parameter/result registers
 
 r0からr30はそれぞれ、X0からX30またはW0からW30に該当する。
 
-サブルーチンを呼び出すときは、以下のようにする。
+r18の使い方はプラットフォーム(OS)依存である。
+Linuxではr9 - r15と同様にtemporary registerとして使用する。
 
-- r0 - r7の8個のレジスタには、サブルーチンの最初の最大8つの引数を格納する。
-- r9 - r15の17個のレジスタは、サブルーチンの復帰時に内容が保証されないので、
+``BL`` 命令または ``BLR`` 命令によってサブルーチンを呼び出すときは、
+レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  サブルーチンの最初の最大8つの引数を格納する。
+r8
+  サブルーチンの復帰値がレジスタによる値渡しでできない場合は、
+  復帰値を書き込むメモリのアドレスを格納する。
+r9 - r18 (10個)
+  サブルーチンの復帰時に内容が変更されている可能性があるので、
   必要であれば値をメモリなどに退避する。
 
-サブルーチンを実行しているときは、以下のようにする。
+1つのサブルーチンを開始するときは、レジスタを以下のようにする。
 
-- r0 - r7の8個のレジスタから、サブルーチンの最初の8つの引数を取り出す。
-- r19 - r28の10個のレジスタは、作業用に使用するのであれば値をメモリなどに
+SP
+  サブルーチン開始時にスタックポインタを伸張する場合は、更新(減算)する。
+
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  サブルーチンの最初の8つの引数を取り出す。
+r19 - r28 (10個)
+  このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに
   退避する。
+r30 (LR)
+  このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに
+  退避する。
+SP
+  サブルーチン実行中にスタックポインタを伸張する場合は、更新(減算)する。
 
-サブルーチンを終了するときは、以下のようにする。
+``RET`` 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。
 
-- r19 - r28の10個のレジスタは、作業用に使用したのであれば値を復旧する。
+r0 - r7 (8個)
+  レジスタで値を返す場合は、返す値を格納する。
+r19 - r28 (10個)
+  このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に
+  戻すため、値を復旧する。
+r30 (LR)
+  このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に
+  戻すため、値を復旧する。
+SP
+  スタックポインタを伸張した場合は、値を復旧する。
 
-.. ToDo: 他の汎用レジスタについて説明を記載する
+.. ToDo: SPレジスタの使い方が正しいか確認する。
+.. ToDo: FPレジスタの使い方を調査する。
 
 アセンブリコードの読み方
 ========================

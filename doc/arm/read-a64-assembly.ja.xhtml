@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+    <meta name="generator" content="Docutils 0.13.1: http://docutils.sourceforge.net/" />
     <title>A64のアセンブリコードの読み方</title>
     <link rel="stylesheet" href="../../css/docutils-report.css" type="text/css" />
   </head>
@@ -27,31 +27,26 @@ A64は、ARMv8-Aアーキテクチャ(およびそれ以降)のAArch64実行状�
           <h2>情報源</h2>
           <p>
 ARMv8-A, AArch64, A64を含むARMアーキテクチャの情報は、
-<a class="reference external" href="http://infocenter.arm.com/">ARM社のARM Infocenter</a> に存在する。特に、ユーザ空間のアプリケーションで動作する一般的なプログラムのアセンブリコードを読むには、以下の文書が参考になるであろう。</p>
+<a class="reference external" href="https://developer.arm.com/docs">Arm Developerのサイト</a> に存在する。特に、ユーザ空間のアプリケーションで動作する一般的なプログラムのアセンブリコードを読むには、以下の文書が参考になるであろう。</p>
           <dl class="docutils">
             <dt>
-              <a class="reference external" href="https://developer.arm.com/docs/ddi0487/latest/arm-architecture-reference-manual-armv8-for-armv8-a-architecture-profile">ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture profile (英語)</a>
+              <a class="reference external" href="https://developer.arm.com/docs/ddi0487/latest/">ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture profile (英語)</a>
             </dt>
             <dd>
 ARMv8アーキテクチャにおけるデータ型、メモリモデル、レジスタ、命令セットなどの全体の説明がある。</dd>
             <dt>
-              <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.100069_0607_00_en/index.html">ARM Compiler armasm User Guide (英語)</a>
+              <a class="reference external" href="https://developer.arm.com/docs/100069/latest/">ARM Compiler armasm User Guide (英語)</a>
             </dt>
             <dd>
 A32、T32、A64のアセンブリ言語の記述や各命令の説明と、その説明に必要な状態(AArch32, AArch64)、レジスタ、条件コードなどの説明がある。</dd>
             <dt>
-              <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.dui0801cj/index.html">ARM コンパイラ armasm ユーザガイド (日本語)</a>
-            </dt>
-            <dd>
-上記の文書の日本語版。</dd>
-            <dt>
-              <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.ihi0055c/index.html">Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語)</a>
+              <a class="reference external" href="https://developer.arm.com/docs/ihi0055/c/">Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語)</a>
             </dt>
             <dd>
 AArch64のABI (Application Binary Interface)での手続き呼び出しの規約の説明がある。手続き呼び出し時にレジスタをどのように使うかなど。</dd>
           </dl>
           <p>
-ただし、上記のリンクは2017年5月時点での最新バージョンへのリンクである。新しいバージョンの文書が存在する場合は、新しい方を参照した方がよい。</p>
+ただし、上記のリンクは2019年5月時点での最新バージョンへのリンクである。新しいバージョンの文書が存在する場合は、新しい方を参照した方がよい。</p>
         </div>
         <div class="section" id="id3">
           <h2>前提となる知識</h2>
@@ -93,7 +88,7 @@ branch, load, store, move</li>
 W31またはX31という名前のレジスタはない。命令に応じて、レジスタ31はスタックポインタまたはゼロレジスタのいずれかになる。スタックポインタとして使用される場合、SPと呼ぶ。ゼロレジスタとして使用される場合、32ビットコンテキストではWZR、64ビットコンテキストではXZRと呼ぶ。</p>
             <p>
 サブルーチン呼び出しが実行されたとき、リンクレジスタ(LR)が復帰アドレスを格納する。リターンアドレスがスタックにストアされる場合は、LRを汎用レジスタとして使用することもできる。LRはレジスタ30にマップする。サブルーチン呼び出し時の各レジスタの使用方法は、
-<a class="reference internal" href="#id11">手続き呼び出し規約</a> にしたがう。</p>
+<a class="reference internal" href="#id10">手続き呼び出し規約</a> にしたがう。</p>
             <p>
 AArch64状態で事前宣言されているコアレジスタの名前は以下の通りである。</p>
             <table border="1" class="docutils">
@@ -186,7 +181,7 @@ NZCVは、Negative, Zero, Carry, Overflowを意味する。</p>
 <!-- ToDo 例を書く -->
           </div>
         </div>
-        <div class="section" id="id8">
+        <div class="section" id="id7">
           <h2>アドレシングモード</h2>
           <p>
 以下では、 <a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.dui0801cj/index.html">ARM コンパイラ armasm ユーザガイド</a>
@@ -232,7 +227,7 @@ NZCVは、Negative, Zero, Carry, Overflowを意味する。</p>
 <!-- ToDo 例を書く。 -->
         </div>
       </div>
-      <div class="section" id="id10">
+      <div class="section" id="id9">
         <h1>主要な命令</h1>
         <div class="section" id="branch">
           <h2>Branch</h2>
@@ -1120,8 +1115,13 @@ Move general-purpose register to System Register</td>
           </table>
         </div>
       </div>
-      <div class="section" id="id11">
+      <div class="section" id="id10">
         <h1>手続き呼び出し規約</h1>
+        <div class="section" id="id11">
+          <h2>呼び出し・復帰命令</h2>
+          <p><tt class="docutils literal">BL</tt> 命令と <tt class="docutils literal">BLR</tt> 命令は、サブルーチンの戻り先のアドレス、つまり現在(<tt class="docutils literal">BL</tt> 命令または <tt class="docutils literal">BLR</tt> 命令)のプログラムカウンタの次の値を、LRレジスタに格納する。その後、プログラムカウンタを指定されたアドレスに更新する。</p>
+          <p><tt class="docutils literal">RET</tt> 命令は、プログラムカウンタをLRレジスタの値に更新する。</p>
+        </div>
         <div class="section" id="id12">
           <h2>汎用レジスタ</h2>
           <table border="1" class="docutils">
@@ -1231,28 +1231,59 @@ Parameter/result registers</td>
           <p>
 r0からr30はそれぞれ、X0からX30またはW0からW30に該当する。</p>
           <p>
-サブルーチンを呼び出すときは、以下のようにする。</p>
-          <ul class="simple">
-            <li>
-r0 - r7の8個のレジスタには、サブルーチンの最初の最大8つの引数を格納する。</li>
-            <li>
-r9 - r15の17個のレジスタは、サブルーチンの復帰時に内容が保証されないので、必要であれば値をメモリなどに退避する。</li>
-          </ul>
+r18の使い方はプラットフォーム(OS)依存である。Linuxではr9 - r15と同様にtemporary registerとして使用する。</p>
+          <p><tt class="docutils literal">BL</tt> 命令または <tt class="docutils literal">BLR</tt> 命令によってサブルーチンを呼び出すときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>r0 - r7 (8個)</dt>
+            <dd>
+サブルーチンの最初の最大8つの引数を格納する。</dd>
+            <dt>r8</dt>
+            <dd>
+サブルーチンの復帰値がレジスタによる値渡しでできない場合は、復帰値を書き込むメモリのアドレスを格納する。</dd>
+            <dt>r9 - r18 (10個)</dt>
+            <dd>
+サブルーチンの復帰時に内容が変更されている可能性があるので、必要であれば値をメモリなどに退避する。</dd>
+          </dl>
           <p>
-サブルーチンを実行しているときは、以下のようにする。</p>
-          <ul class="simple">
-            <li>
-r0 - r7の8個のレジスタから、サブルーチンの最初の8つの引数を取り出す。</li>
-            <li>
-r19 - r28の10個のレジスタは、作業用に使用するのであれば値をメモリなどに退避する。</li>
-          </ul>
+1つのサブルーチンを開始するときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>SP</dt>
+            <dd>
+サブルーチン開始時にスタックポインタを伸張する場合は、更新(減算)する。</dd>
+          </dl>
           <p>
-サブルーチンを終了するときは、以下のようにする。</p>
-          <ul class="simple">
-            <li>
-r19 - r28の10個のレジスタは、作業用に使用したのであれば値を復旧する。</li>
-          </ul>
-<!-- ToDo: 他の汎用レジスタについて説明を記載する -->
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>r0 - r7 (8個)</dt>
+            <dd>
+サブルーチンの最初の8つの引数を取り出す。</dd>
+            <dt>r19 - r28 (10個)</dt>
+            <dd>
+このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに退避する。</dd>
+            <dt>r30 (LR)</dt>
+            <dd>
+このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに退避する。</dd>
+            <dt>SP</dt>
+            <dd>
+サブルーチン実行中にスタックポインタを伸張する場合は、更新(減算)する。</dd>
+          </dl>
+          <p><tt class="docutils literal">RET</tt> 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>r0 - r7 (8個)</dt>
+            <dd>
+レジスタで値を返す場合は、返す値を格納する。</dd>
+            <dt>r19 - r28 (10個)</dt>
+            <dd>
+このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に戻すため、値を復旧する。</dd>
+            <dt>r30 (LR)</dt>
+            <dd>
+このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に戻すため、値を復旧する。</dd>
+            <dt>SP</dt>
+            <dd>
+スタックポインタを伸張した場合は、値を復旧する。</dd>
+          </dl>
+<!-- ToDo: SPレジスタの使い方が正しいか確認する。 -->
+<!-- ToDo: FPレジスタの使い方を調査する。 -->
         </div>
       </div>
       <div class="section" id="id13">
