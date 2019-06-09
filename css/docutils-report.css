@@ -171,6 +171,12 @@ li
 dt
 {
 	text-decoration: underline;
+	margin-left: 1em;
+}
+
+dd
+{
+	margin-left: 2em;
 }
 
 p
