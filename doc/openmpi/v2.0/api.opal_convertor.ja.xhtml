@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+    <meta name="generator" content="Docutils 0.14: http://docutils.sourceforge.net/" />
     <title>opal_convertor_t (OPALのconvertor)</title>
     <link rel="stylesheet" href="../../../css/docutils-report.css" type="text/css" />
   </head>
@@ -736,8 +736,7 @@ the local stack for the actual conversion</blockquote>
 <tt class="docutils literal"><span class="pre">opal_datatype_t::btypes[OPAL_DATATYPE_LOOP]</span></tt>
 (<tt class="docutils literal"><span class="pre">opal_datatype_t::desc.desc</span></tt> 配列内の <tt class="docutils literal">ddt_loop_desc_t</tt> の数)に1を足した要素数だけメモリが確保される。その値が <tt class="docutils literal">DT_STATIC_STACK_SIZE</tt>
 以下であれば <tt class="docutils literal">static_stack</tt> を指し、そうでなければ <tt class="docutils literal">malloc</tt> された領域を指す。</p>
-            <p><tt class="docutils literal">pStack</tt> 配列の最初の要素(<tt class="docutils literal">pStack[0]</tt>)は、データの要素数
-(<tt class="docutils literal"><span class="pre">opal_datatype_t::count</span></tt>)分の繰り返しに対応し、以下に初期化される。:</p>
+            <p><tt class="docutils literal">pStack</tt> 配列の最初の要素(<tt class="docutils literal">pStack[0]</tt>)は、データの要素数(<tt class="docutils literal"><span class="pre">opal_datatype_t::count</span></tt>)分の繰り返しに対応し、以下に初期化される。:</p>
             <pre class="literal-block">
 .index = -1
 .type  = OPAL_DATATYPE_LOOP
@@ -746,8 +745,7 @@ the local stack for the actual conversion</blockquote>
 </pre>
             <p>
 datatypeの <tt class="docutils literal"><span class="pre">opal_datatype_t::opt_desc</span></tt> 配列の中で、これに対応する
-<tt class="docutils literal">ddt_loop_desc_t</tt> オブジェクトは存在せず、配列の最初の要素の直前
-(<tt class="docutils literal">.index = <span class="pre">-1</span></tt>)に仮想的な <tt class="docutils literal">ddt_loop_desc_t</tt> オブジェクトがあるとみなす。これに対応する <tt class="docutils literal">ddt_end_loop_desc_t</tt> オブジェクトは配列の最後に存在する。これが、datatypeの <tt class="docutils literal"><span class="pre">opal_datatype_t::opt_desc</span></tt> 配列の最後に余分な <tt class="docutils literal">ddt_end_loop_desc_t</tt> オブジェクトが存在する理由である。</p>
+<tt class="docutils literal">ddt_loop_desc_t</tt> オブジェクトは存在せず、配列の最初の要素の直前(<tt class="docutils literal">.index = <span class="pre">-1</span></tt>)に仮想的な <tt class="docutils literal">ddt_loop_desc_t</tt> オブジェクトがあるとみなす。これに対応する <tt class="docutils literal">ddt_end_loop_desc_t</tt> オブジェクトは配列の最後に存在する。これが、datatypeの <tt class="docutils literal"><span class="pre">opal_datatype_t::opt_desc</span></tt> 配列の最後に余分な <tt class="docutils literal">ddt_end_loop_desc_t</tt> オブジェクトが存在する理由である。</p>
             <p><tt class="docutils literal">pStack</tt> 配列の2つ目の要素(<tt class="docutils literal">pStack[1]</tt>)はdatatypeの1番浅い繰り返しに対応し、 <tt class="docutils literal">pStack</tt> 配列の3つ目の要素(<tt class="docutils literal">pStack[2]</tt>)はdatatypeの2番目に浅い繰り返しに対応する。</p>
             <p>
 datatypeの <tt class="docutils literal"><span class="pre">opal_datatype_t::opt_desc</span></tt> 配列の最初の要素が
@@ -966,8 +964,7 @@ datatypeのtype mapに応じてデータ変換を行うときに一時的に使�
 1つの <tt class="docutils literal">dt_stack_t</tt> オブジェクトが1つの繰り返し(1組の <tt class="docutils literal">ddt_loop_desc_t</tt> と
 <tt class="docutils literal">ddt_endloop_desc_t</tt>)に対応する。</p>
           <p>
-ただし、<tt class="docutils literal">MPI_Send</tt> 関数のようにあるdatatypeのデータが複数(<tt class="docutils literal">count</tt>)個
-指定されたときには、 <tt class="docutils literal"><span class="pre">dt_type_desc_t::desc</span></tt> 配列の最初の要素の直前に仮想的な <tt class="docutils literal">ddt_loop_desc_t</tt> オブジェクトがあるとみなす。そのため、そのときには対応する <tt class="docutils literal">ddt_loop_desc_t</tt> オブジェクトが存在しない以下のオブジェクトを <tt class="docutils literal">dt_stack_t</tt> 配列の先頭に作成して使用する。:</p>
+ただし、<tt class="docutils literal">MPI_Send</tt> 関数のようにあるdatatypeのデータが複数(<tt class="docutils literal">count</tt>)個指定されたときには、 <tt class="docutils literal"><span class="pre">dt_type_desc_t::desc</span></tt> 配列の最初の要素の直前に仮想的な <tt class="docutils literal">ddt_loop_desc_t</tt> オブジェクトがあるとみなす。そのため、そのときには対応する <tt class="docutils literal">ddt_loop_desc_t</tt> オブジェクトが存在しない以下のオブジェクトを <tt class="docutils literal">dt_stack_t</tt> 配列の先頭に作成して使用する。:</p>
           <pre class="literal-block">
 .index = -1
 .type  = OPAL_DATATYPE_LOOP
@@ -1161,8 +1158,7 @@ index in the element description</blockquote>
 対応する <tt class="docutils literal">ddt_loop_desc_t</tt> または <tt class="docutils literal">ddt_elem_desc_t</tt> の、
 <tt class="docutils literal"><span class="pre">dt_type_desc_t::desc</span></tt> 配列でのindex。</p>
             <p>
-繰り返しを開始するとき(<tt class="docutils literal">ddt_loop_desc_t</tt>)またはデータ変換を中断したとき
-(<tt class="docutils literal">ddt_elem_desc_t</tt>)に設定される。</p>
+繰り返しを開始するとき(<tt class="docutils literal">ddt_loop_desc_t</tt>)またはデータ変換を中断したとき(<tt class="docutils literal">ddt_elem_desc_t</tt>)に設定される。</p>
           </div>
           <div class="section" id="type-int16-t">
             <h3>
@@ -1176,8 +1172,7 @@ OPAL_DATATYPE_UINT1)</blockquote>
 対応する <tt class="docutils literal">ddt_loop_desc_t</tt> または <tt class="docutils literal">ddt_elem_desc_t</tt> の、
 <tt class="docutils literal"><span class="pre">ddt_loop_desc_t::common.type</span></tt> または <tt class="docutils literal"><span class="pre">ddt_elem_desc_t::common.type</span></tt> 。</p>
             <p>
-繰り返しを開始するとき(<tt class="docutils literal">ddt_loop_desc_t</tt>)またはデータ変換を中断したとき
-(<tt class="docutils literal">ddt_elem_desc_t</tt>)に設定される。</p>
+繰り返しを開始するとき(<tt class="docutils literal">ddt_loop_desc_t</tt>)またはデータ変換を中断したとき(<tt class="docutils literal">ddt_elem_desc_t</tt>)に設定される。</p>
           </div>
           <div class="section" id="count-size-t">
             <h3>

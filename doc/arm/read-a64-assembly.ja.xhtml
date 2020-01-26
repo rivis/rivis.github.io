@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="generator" content="Docutils 0.13.1: http://docutils.sourceforge.net/" />
+    <meta name="generator" content="Docutils 0.14: http://docutils.sourceforge.net/" />
     <title>A64のアセンブリコードの読み方</title>
     <link rel="stylesheet" href="../../css/docutils-report.css" type="text/css" />
   </head>
@@ -900,8 +900,7 @@ Compare Negative (register)</td>
           </table>
           <p>
 上記でBrief Descriptionに "(register)" と書いた命令には、実際には
-"(shifted register)" と "(extended register)" の2つの命令が存在する。shifted registerは、追加のoperandで指定された通り、 <tt class="docutils literal">src2</tt> をビットシフト
-(LSL (論理左シフト)またはLSR (論理右シフト)またはASR (算術右シフト)してから、
+"(shifted register)" と "(extended register)" の2つの命令が存在する。shifted registerは、追加のoperandで指定された通り、 <tt class="docutils literal">src2</tt> をビットシフト(LSL (論理左シフト)またはLSR (論理右シフト)またはASR (算術右シフト)してから、
 <tt class="docutils literal">src1</tt> との和や差を計算する。extended registerは、追加のoperandで指定された通り、<tt class="docutils literal">src2</tt> を符号拡張とビットシフト(LSR (論理右シフト))してから、 <tt class="docutils literal">src1</tt> との和や差を計算する。</p>
           <p><tt class="docutils literal">CMP</tt> と <tt class="docutils literal">CMN</tt> はそれぞれ、<tt class="docutils literal">dst</tt> をゼロレジスタWZRとした場合の
 <tt class="docutils literal">SUBS</tt> と <tt class="docutils literal">ADDS</tt> と同じである。</p>

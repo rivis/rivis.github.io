@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="generator" content="Docutils 0.12: http://docutils.sourceforge.net/" />
+    <meta name="generator" content="Docutils 0.14: http://docutils.sourceforge.net/" />
     <title>opal_datatype_t (OPALのdatatype)</title>
     <link rel="stylesheet" href="../../../css/docutils-report.css" type="text/css" />
   </head>
@@ -744,8 +744,7 @@ MPI_Type_create_struct(3, blengths3, disps3, dtypes3, &amp;dt);
 MPI_Type_commit(&amp;dt);
 </pre>
             <p>
-これを図で現すと以下である。 <tt class="docutils literal">■</tt> はデータ1バイト、 <tt class="docutils literal">□</tt> は隙間
-1バイトを示す。:</p>
+これを図で現すと以下である。 <tt class="docutils literal">■</tt> はデータ1バイト、 <tt class="docutils literal">□</tt> は隙間1バイトを示す。:</p>
             <pre class="literal-block">
 ■■■■■■■■ ■■■■ ■■ ■■ ■■■■ ■■ ■■ ■■□□ ■■□□ ■■□□
 </pre>
@@ -1097,8 +1096,7 @@ the displacement of the first block in the loop</blockquote>
             </a>
           </h2>
           <p>
-既存のdatatype <tt class="docutils literal">pdtBase</tt> に別の既存のdatatype <tt class="docutils literal">pdtAdd</tt> を <tt class="docutils literal">count</tt> 個
-追加する。</p>
+既存のdatatype <tt class="docutils literal">pdtBase</tt> に別の既存のdatatype <tt class="docutils literal">pdtAdd</tt> を <tt class="docutils literal">count</tt> 個追加する。</p>
           <p><tt class="docutils literal">pdtAdd</tt> に <tt class="docutils literal"><span class="pre">opal_datatype_t::id</span></tt> が <tt class="docutils literal">OPAL_DATATYPE_LB</tt> または
 <tt class="docutils literal">OPAL_DATATYPE_UB</tt> のdatatype(<tt class="docutils literal">opal_datatype_lb</tt>, <tt class="docutils literal">ompi_mpi_lb</tt>
 など)を渡してもよく、その場合は <tt class="docutils literal"><span class="pre">opal_datatype_t::lb</span></tt> や
