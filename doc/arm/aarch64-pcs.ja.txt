@@ -1,0 +1,296 @@
+################################################################
+AArch64の手続き呼び出し規約
+################################################################
+
+.. style: docutils-report
+
+はじめに
+========
+
+あるルーチンがサブルーチンを呼び出す場合に、呼び出し時に引数を
+どのようにして渡すか、復帰時に復帰値をどのようにして渡すか、
+復帰後にどのレジスタが呼び出し前と同じ値であることが保証されて
+いるか、といった規約を決めておき、呼び出す側(caller)と呼び出される
+側(callee)とがその規約を守る必要がある。
+Arm社の文章ではそれをprocedure call standardと呼んでいる。
+一般にはcalling conventionとも呼ばれる。
+
+ここでは、AArch64のprocedure call standardの概要をまとめておく。
+
+規格書
+------
+
+2020年1月時点では、AArch64のprocedure call standardが書かれている
+Arm社の規格書として以下の3つがある。
+
+**( )** 内の語は規格書で使われている略称である。
+
+`Procedure Call Standard for the ARM 64-bit Architecture (AArch64) <https://developer.arm.com/docs/ihi0055/latest/>`_ **(AAPCS64)**
+  AArch64の基本的なprocedure call standard。
+  2020年1月時点では、最新のバージョンは2018Q4 (2018年12月31日
+  発行)であり、SVEに関する記述はない。
+`Procedure Call Standard for the ARM 64-bit Architecture (AArch64) with SVE support <https://developer.arm.com/docs/100986/latest/>`_ **(SVEPCS)**
+  AAPCS64のバージョン1.0 (2013年5月22日発行)に対してSVEに関する
+  記述を追加したもの。
+  2020年1月時点では、最新のバージョンはSVEpcs 00bet1 (2017年3月30日
+  発行)であり、SVEに関する記述はbeta releaseとされている。
+`Vector Function Application Binary Interface Specification for AArch64 <https://developer.arm.com/docs/101129/latest/>`_ **(VABIA64)**
+  OpenMPの ``declare simd`` directiveなどで使われるvector function
+  用のABI。
+  AAPCS64とSVEPCSで定義されているprocedure call standardとは別の
+  procedure call standardを定義している。
+  2020年1月時点では、最新のバージョンは2019Q2 (2019年6月3日発行)。
+
+AAPCSとAAVPCS
+=============
+
+AArch64用のprocedure call standardとしては、もともとAAPCS64とSVEPCSで
+定義されている **AAPCS** (Procedure Call Standard for the Arm 64-bit
+Architecture)が存在していた。
+
+しかし、AAPCSでは、Advanced SIMDのすべてのレジスタV0-V31は、
+サブルーチンの呼び出し後に値が保存されるとは保証されず、
+呼び出し前のメモリへの退避と呼び出し後のメモリからの復旧が
+必要になる。
+
+そこで、より効率的な **AAVPCS** (Vector Procedure Call Standard
+for the Arm 64-bit Architecture)がVABIA64で定義された。
+
+AAVPCSは以下の場合にAAPCSの代わりに使用される。
+
+- OpenMPの ``declare simd`` directiveが適用された関数(C/C++/Fortran)
+  またはサブルーチン(Fortran)
+- GNU C/C++拡張構文で ``aarch64_vector_pcs`` attributeが設定された関数
+
+AAVPCSが適用される例::
+
+ #pragma omp declare simd
+ uint64_t foo(uint32_t a, float b) {
+   /* function body */
+ }
+
+ __attribute__((aarch64_vector_pcs))
+ uint64x2_t foo(uint32x2_t a, float32x2_t b) {
+   /* function body */
+ }
+
+レジスタの使い方
+================
+
+汎用レジスタ
+------------
+
+========= ======= ===================================================
+Register  Special Role in the procedure call standard
+========= ======= ===================================================
+SP        \       The Stack Pointer.
+r30       LR      The Link Register.
+r29       FP      The Frame Pointer
+r19 - r28 \       Callee-saved registers.
+r18       \       The Platform Register, if needed;
+                  otherwise a temporary register.
+r17       IP1     The second intra-procedure-call temporary register
+                  (can be used by call veneers and PLT code);
+                  at other times may be used as a temporary register.
+r16       IP0     The first intra-procedure-call scratch register
+                  (can be used by call veneers and PLT code);
+                  at other times may be used as a temporary register.
+r9 - r15  \       Temporary registers
+r8        \       Indirect result location register
+r0 - r7   \       Parameter/result registers
+========= ======= ===================================================
+
+r0からr30はそれぞれ、X0からX30またはW0からW30に該当する。
+
+r18の使い方はプラットフォーム(OS)依存である。
+Linuxではr9 - r15と同様にtemporary registerとして使用する。
+
+``BL`` 命令または ``BLR`` 命令によってサブルーチンを呼び出すときは、
+レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  サブルーチンの最初の最大8つの引数を格納する。
+r8
+  サブルーチンの復帰値がレジスタによる値渡しでできない場合は、
+  復帰値を書き込むメモリのアドレスを格納する。
+r9 - r18 (10個)
+  サブルーチンの復帰時に内容が変更されている可能性があるので、
+  必要であれば値をメモリなどに退避する。
+
+1つのサブルーチンを開始するときは、レジスタを以下のようにする。
+
+SP
+  サブルーチン開始時にスタックポインタを伸張する場合は、更新(減算)する。
+
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  サブルーチンの最初の8つの引数を取り出す。
+r19 - r28 (10個)
+  このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに
+  退避する。
+r30 (LR)
+  このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに
+  退避する。
+SP
+  サブルーチン実行中にスタックポインタを伸張する場合は、更新(減算)する。
+
+``RET`` 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  レジスタで値を返す場合は、返す値を格納する。
+r19 - r28 (10個)
+  このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に
+  戻すため、値を復旧する。
+r30 (LR)
+  このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に
+  戻すため、値を復旧する。
+SP
+  スタックポインタを伸張した場合は、値を復旧する。
+
+.. ToDo: SPレジスタの使い方が正しいか確認する。
+.. ToDo: FPレジスタの使い方を調査する。
+
+SIMD、浮動小数点、scalable vectorレジスタ
+-----------------------------------------
+
+AAPCSとAAVPCSでレジスタの使い方が異なる。
+さらに、AAPCSであっても、サブルーチンがscalable vectorレジスタ
+またはscalable pridicateレジスタを引数または復帰値に使うかどうかで
+呼び出し規約が異なり、使う場合は実質的にAAVPCSと同じになる。
+
+AAPCS
+^^^^^
+
+サブルーチンがscalable vectorレジスタまたはscalable pridicate
+レジスタを引数または復帰値に使う場合は除く。
+
+========= ==============================================================
+Register  Role in the procedure call standard
+========= ==============================================================
+r16 - r31 Temporary registers
+r8 - r15  Callee-saved registers. (only the lower 64 bits are preserved)
+r0 - r7   Parameter/result registers
+========= ==============================================================
+
+r0からr31はそれぞれ、B0からB31、H0からH31、S0からS31、D0からD31、
+Q0からQ31、V0からV31、またはZ0からZ31に該当する。
+
+r8からr15は特殊で、下位64ビットだけがcallee-savedになる。
+つまり、浮動小数点レジスタまたはSIMDレジスタの64-bit short vectorは
+calle-savedになるが、SIMDレジスタの128-bit short vectorとscalable
+vectorレジスタは下位64ビットを除いてcaller-savedになる。
+
+``BL`` 命令または ``BLR`` 命令によってサブルーチンを呼び出すときは、
+レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  サブルーチンの最初の最大8つの引数を格納する。
+r8 - r15 (8個)
+  下位64ビット以外を使用している場合は、
+  サブルーチンの復帰時に内容が変更されている可能性があるので、
+  必要であれば下位64ビット以外の値をメモリなどに退避する。
+r16 - r31 (16個)
+  サブルーチンの復帰時に内容が変更されている可能性があるので、
+  必要であれば値をメモリなどに退避する。
+
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  サブルーチンの最初の8つの引数を取り出す。
+r8 - r15 (8個)
+  このサブルーチンで作業用に更新する場合は、使用前に下位64ビットの
+  値をメモリなどに退避する。
+
+``RET`` 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  レジスタで値を返す場合は、返す値を格納する。
+r8 - r15 (8個)
+  このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に
+  戻すため、下位64ビットの値を復旧する。
+
+AAVPCS
+^^^^^^
+
+AAPCSでサブルーチンがscalable vectorレジスタまたはscalable pridicate
+レジスタを引数または復帰値に使う場合も含む。
+
+========= ==============================================================
+Register  Role in the procedure call standard
+========= ==============================================================
+r8 - r31  Callee-saved registers.
+r0 - r7   Parameter/result registers
+========= ==============================================================
+
+r0からr31はそれぞれ、B0からB31、H0からH31、S0からS31、D0からD31、
+Q0からQ31、V0からV31、またはZ0からZ31に該当する。
+
+``BL`` 命令または ``BLR`` 命令によってサブルーチンを呼び出すときは、
+レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  サブルーチンの最初の最大8つの引数を格納する。
+
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  サブルーチンの最初の8つの引数を取り出す。
+r8 - r31 (24個)
+  このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに
+  退避する。
+
+``RET`` 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。
+
+r0 - r7 (8個)
+  レジスタで値を返す場合は、返す値を格納する。
+r8 - r31 (24個)
+  このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に
+  戻すため、値を復旧する。
+
+scalable pridicateレジスタ
+--------------------------
+
+========= ==============================================================
+Register  Role in the procedure call standard
+========= ==============================================================
+p4 - r15  Callee-saved registers.
+p0 - p3   Parameter/result registers
+========= ==============================================================
+
+``BL`` 命令または ``BLR`` 命令によってサブルーチンを呼び出すときは、
+レジスタを以下のようにする。
+
+p0 - p3 (4個)
+  サブルーチンの最初の最大4つの引数を格納する。
+
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。
+
+p0 - p3 (4個)
+  サブルーチンの最初の4つの引数を取り出す。
+p4 - p15 (12個)
+  このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに
+  退避する。
+
+``RET`` 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。
+
+p0 - p3 (4個)
+  レジスタで値を返す場合は、返す値を格納する。
+p4 - r15 (12個)
+  このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に
+  戻すため、値を復旧する。
+
+特殊レジスタ
+------------
+
+サブルーチンの呼び出し時と復帰時の特殊レジスタの状態は以下。
+
+NZCVレジスタ
+  不定。
+FPSRレジスタ
+  不定。
+FPCRレジスタ
+  exception-controlビット(8-12)、rounding modeビット(22-23)、そして
+  flush-to-zeroビット(24)は、特殊なサブルーチンからの復帰時に
+  変更されている場合がある。
+  それら以外のビットは未定義。

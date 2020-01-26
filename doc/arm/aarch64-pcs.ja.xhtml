@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="generator" content="Docutils 0.14: http://docutils.sourceforge.net/" />
+    <title>AArch64の手続き呼び出し規約</title>
+    <link rel="stylesheet" href="../../css/docutils-report.css" type="text/css" />
+  </head>
+  <body>
+    <div class="document" id="aarch64">
+      <h1 class="title">AArch64の手続き呼び出し規約</h1>
+<!-- style: docutils-report -->
+      <div class="section" id="id1">
+        <h1>はじめに</h1>
+        <p>
+あるルーチンがサブルーチンを呼び出す場合に、呼び出し時に引数をどのようにして渡すか、復帰時に復帰値をどのようにして渡すか、復帰後にどのレジスタが呼び出し前と同じ値であることが保証されているか、といった規約を決めておき、呼び出す側(caller)と呼び出される側(callee)とがその規約を守る必要がある。Arm社の文章ではそれをprocedure call standardと呼んでいる。一般にはcalling conventionとも呼ばれる。</p>
+        <p>
+ここでは、AArch64のprocedure call standardの概要をまとめておく。</p>
+        <div class="section" id="id2">
+          <h2>規格書</h2>
+          <p>
+2020年1月時点では、AArch64のprocedure call standardが書かれているArm社の規格書として以下の3つがある。</p>
+          <p><strong>( )</strong> 内の語は規格書で使われている略称である。</p>
+          <dl class="docutils">
+            <dt>
+              <a class="reference external" href="https://developer.arm.com/docs/ihi0055/latest/">Procedure Call Standard for the ARM 64-bit Architecture (AArch64)</a>
+              <strong>(AAPCS64)</strong>
+            </dt>
+            <dd>
+AArch64の基本的なprocedure call standard。2020年1月時点では、最新のバージョンは2018Q4 (2018年12月31日発行)であり、SVEに関する記述はない。</dd>
+            <dt>
+              <a class="reference external" href="https://developer.arm.com/docs/100986/latest/">Procedure Call Standard for the ARM 64-bit Architecture (AArch64) with SVE support</a>
+              <strong>(SVEPCS)</strong>
+            </dt>
+            <dd>
+AAPCS64のバージョン1.0 (2013年5月22日発行)に対してSVEに関する記述を追加したもの。2020年1月時点では、最新のバージョンはSVEpcs 00bet1 (2017年3月30日発行)であり、SVEに関する記述はbeta releaseとされている。</dd>
+            <dt>
+              <a class="reference external" href="https://developer.arm.com/docs/101129/latest/">Vector Function Application Binary Interface Specification for AArch64</a>
+              <strong>(VABIA64)</strong>
+            </dt>
+            <dd>
+OpenMPの <tt class="docutils literal">declare simd</tt> directiveなどで使われるvector function用のABI。AAPCS64とSVEPCSで定義されているprocedure call standardとは別のprocedure call standardを定義している。2020年1月時点では、最新のバージョンは2019Q2 (2019年6月3日発行)。</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="section" id="aapcsaavpcs">
+        <h1>AAPCSとAAVPCS</h1>
+        <p>
+AArch64用のprocedure call standardとしては、もともとAAPCS64とSVEPCSで定義されている <strong>AAPCS</strong> (Procedure Call Standard for the Arm 64-bit
+Architecture)が存在していた。</p>
+        <p>
+しかし、AAPCSでは、Advanced SIMDのすべてのレジスタV0-V31は、サブルーチンの呼び出し後に値が保存されるとは保証されず、呼び出し前のメモリへの退避と呼び出し後のメモリからの復旧が必要になる。</p>
+        <p>
+そこで、より効率的な <strong>AAVPCS</strong> (Vector Procedure Call Standard
+for the Arm 64-bit Architecture)がVABIA64で定義された。</p>
+        <p>
+AAVPCSは以下の場合にAAPCSの代わりに使用される。</p>
+        <ul class="simple">
+          <li>
+OpenMPの <tt class="docutils literal">declare simd</tt> directiveが適用された関数(C/C++/Fortran)またはサブルーチン(Fortran)</li>
+          <li>
+GNU C/C++拡張構文で <tt class="docutils literal">aarch64_vector_pcs</tt> attributeが設定された関数</li>
+        </ul>
+        <p>
+AAVPCSが適用される例:</p>
+        <pre class="literal-block">
+#pragma omp declare simd
+uint64_t foo(uint32_t a, float b) {
+  /* function body */
+}
+
+__attribute__((aarch64_vector_pcs))
+uint64x2_t foo(uint32x2_t a, float32x2_t b) {
+  /* function body */
+}
+</pre>
+      </div>
+      <div class="section" id="id3">
+        <h1>レジスタの使い方</h1>
+        <div class="section" id="id4">
+          <h2>汎用レジスタ</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="13%" />
+              <col width="10%" />
+              <col width="76%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Register</th>
+                <th class="head">
+Special</th>
+                <th class="head">
+Role in the procedure call standard</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+SP</td>
+                <td>
+</td>
+                <td>
+The Stack Pointer.</td>
+              </tr>
+              <tr>
+                <td>
+r30</td>
+                <td>
+LR</td>
+                <td>
+The Link Register.</td>
+              </tr>
+              <tr>
+                <td>
+r29</td>
+                <td>
+FP</td>
+                <td>
+The Frame Pointer</td>
+              </tr>
+              <tr>
+                <td>
+r19 - r28</td>
+                <td>
+</td>
+                <td>
+Callee-saved registers.</td>
+              </tr>
+              <tr>
+                <td>
+r18</td>
+                <td>
+</td>
+                <td>
+The Platform Register, if needed;
+otherwise a temporary register.</td>
+              </tr>
+              <tr>
+                <td>
+r17</td>
+                <td>
+IP1</td>
+                <td>
+The second intra-procedure-call temporary register
+(can be used by call veneers and PLT code);
+at other times may be used as a temporary register.</td>
+              </tr>
+              <tr>
+                <td>
+r16</td>
+                <td>
+IP0</td>
+                <td>
+The first intra-procedure-call scratch register
+(can be used by call veneers and PLT code);
+at other times may be used as a temporary register.</td>
+              </tr>
+              <tr>
+                <td>
+r9 - r15</td>
+                <td>
+</td>
+                <td>
+Temporary registers</td>
+              </tr>
+              <tr>
+                <td>
+r8</td>
+                <td>
+</td>
+                <td>
+Indirect result location register</td>
+              </tr>
+              <tr>
+                <td>
+r0 - r7</td>
+                <td>
+</td>
+                <td>
+Parameter/result registers</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+r0からr30はそれぞれ、X0からX30またはW0からW30に該当する。</p>
+          <p>
+r18の使い方はプラットフォーム(OS)依存である。Linuxではr9 - r15と同様にtemporary registerとして使用する。</p>
+          <p><tt class="docutils literal">BL</tt> 命令または <tt class="docutils literal">BLR</tt> 命令によってサブルーチンを呼び出すときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>r0 - r7 (8個)</dt>
+            <dd>
+サブルーチンの最初の最大8つの引数を格納する。</dd>
+            <dt>r8</dt>
+            <dd>
+サブルーチンの復帰値がレジスタによる値渡しでできない場合は、復帰値を書き込むメモリのアドレスを格納する。</dd>
+            <dt>r9 - r18 (10個)</dt>
+            <dd>
+サブルーチンの復帰時に内容が変更されている可能性があるので、必要であれば値をメモリなどに退避する。</dd>
+          </dl>
+          <p>
+1つのサブルーチンを開始するときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>SP</dt>
+            <dd>
+サブルーチン開始時にスタックポインタを伸張する場合は、更新(減算)する。</dd>
+          </dl>
+          <p>
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>r0 - r7 (8個)</dt>
+            <dd>
+サブルーチンの最初の8つの引数を取り出す。</dd>
+            <dt>r19 - r28 (10個)</dt>
+            <dd>
+このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに退避する。</dd>
+            <dt>r30 (LR)</dt>
+            <dd>
+このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに退避する。</dd>
+            <dt>SP</dt>
+            <dd>
+サブルーチン実行中にスタックポインタを伸張する場合は、更新(減算)する。</dd>
+          </dl>
+          <p><tt class="docutils literal">RET</tt> 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>r0 - r7 (8個)</dt>
+            <dd>
+レジスタで値を返す場合は、返す値を格納する。</dd>
+            <dt>r19 - r28 (10個)</dt>
+            <dd>
+このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に戻すため、値を復旧する。</dd>
+            <dt>r30 (LR)</dt>
+            <dd>
+このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に戻すため、値を復旧する。</dd>
+            <dt>SP</dt>
+            <dd>
+スタックポインタを伸張した場合は、値を復旧する。</dd>
+          </dl>
+<!-- ToDo: SPレジスタの使い方が正しいか確認する。 -->
+<!-- ToDo: FPレジスタの使い方を調査する。 -->
+        </div>
+        <div class="section" id="simdscalable-vector">
+          <h2>SIMD、浮動小数点、scalable vectorレジスタ</h2>
+          <p>
+AAPCSとAAVPCSでレジスタの使い方が異なる。さらに、AAPCSであっても、サブルーチンがscalable vectorレジスタまたはscalable pridicateレジスタを引数または復帰値に使うかどうかで呼び出し規約が異なり、使う場合は実質的にAAVPCSと同じになる。</p>
+          <div class="section" id="aapcs">
+            <h3>AAPCS</h3>
+            <p>
+サブルーチンがscalable vectorレジスタまたはscalable pridicateレジスタを引数または復帰値に使う場合は除く。</p>
+            <table border="1" class="docutils">
+              <colgroup>
+                <col width="13%" />
+                <col width="87%" />
+              </colgroup>
+              <thead valign="bottom">
+                <tr>
+                  <th class="head">
+Register</th>
+                  <th class="head">
+Role in the procedure call standard</th>
+                </tr>
+              </thead>
+              <tbody valign="top">
+                <tr>
+                  <td>
+r16 - r31</td>
+                  <td>
+Temporary registers</td>
+                </tr>
+                <tr>
+                  <td>
+r8 - r15</td>
+                  <td>
+Callee-saved registers. (only the lower 64 bits are preserved)</td>
+                </tr>
+                <tr>
+                  <td>
+r0 - r7</td>
+                  <td>
+Parameter/result registers</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+r0からr31はそれぞれ、B0からB31、H0からH31、S0からS31、D0からD31、Q0からQ31、V0からV31、またはZ0からZ31に該当する。</p>
+            <p>
+r8からr15は特殊で、下位64ビットだけがcallee-savedになる。つまり、浮動小数点レジスタまたはSIMDレジスタの64-bit short vectorはcalle-savedになるが、SIMDレジスタの128-bit short vectorとscalable
+vectorレジスタは下位64ビットを除いてcaller-savedになる。</p>
+            <p><tt class="docutils literal">BL</tt> 命令または <tt class="docutils literal">BLR</tt> 命令によってサブルーチンを呼び出すときは、レジスタを以下のようにする。</p>
+            <dl class="docutils">
+              <dt>r0 - r7 (8個)</dt>
+              <dd>
+サブルーチンの最初の最大8つの引数を格納する。</dd>
+              <dt>r8 - r15 (8個)</dt>
+              <dd>
+下位64ビット以外を使用している場合は、サブルーチンの復帰時に内容が変更されている可能性があるので、必要であれば下位64ビット以外の値をメモリなどに退避する。</dd>
+              <dt>r16 - r31 (16個)</dt>
+              <dd>
+サブルーチンの復帰時に内容が変更されている可能性があるので、必要であれば値をメモリなどに退避する。</dd>
+            </dl>
+            <p>
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。</p>
+            <dl class="docutils">
+              <dt>r0 - r7 (8個)</dt>
+              <dd>
+サブルーチンの最初の8つの引数を取り出す。</dd>
+              <dt>r8 - r15 (8個)</dt>
+              <dd>
+このサブルーチンで作業用に更新する場合は、使用前に下位64ビットの値をメモリなどに退避する。</dd>
+            </dl>
+            <p><tt class="docutils literal">RET</tt> 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。</p>
+            <dl class="docutils">
+              <dt>r0 - r7 (8個)</dt>
+              <dd>
+レジスタで値を返す場合は、返す値を格納する。</dd>
+              <dt>r8 - r15 (8個)</dt>
+              <dd>
+このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に戻すため、下位64ビットの値を復旧する。</dd>
+            </dl>
+          </div>
+          <div class="section" id="aavpcs">
+            <h3>AAVPCS</h3>
+            <p>
+AAPCSでサブルーチンがscalable vectorレジスタまたはscalable pridicateレジスタを引数または復帰値に使う場合も含む。</p>
+            <table border="1" class="docutils">
+              <colgroup>
+                <col width="13%" />
+                <col width="87%" />
+              </colgroup>
+              <thead valign="bottom">
+                <tr>
+                  <th class="head">
+Register</th>
+                  <th class="head">
+Role in the procedure call standard</th>
+                </tr>
+              </thead>
+              <tbody valign="top">
+                <tr>
+                  <td>
+r8 - r31</td>
+                  <td>
+Callee-saved registers.</td>
+                </tr>
+                <tr>
+                  <td>
+r0 - r7</td>
+                  <td>
+Parameter/result registers</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+r0からr31はそれぞれ、B0からB31、H0からH31、S0からS31、D0からD31、Q0からQ31、V0からV31、またはZ0からZ31に該当する。</p>
+            <p><tt class="docutils literal">BL</tt> 命令または <tt class="docutils literal">BLR</tt> 命令によってサブルーチンを呼び出すときは、レジスタを以下のようにする。</p>
+            <dl class="docutils">
+              <dt>r0 - r7 (8個)</dt>
+              <dd>
+サブルーチンの最初の最大8つの引数を格納する。</dd>
+            </dl>
+            <p>
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。</p>
+            <dl class="docutils">
+              <dt>r0 - r7 (8個)</dt>
+              <dd>
+サブルーチンの最初の8つの引数を取り出す。</dd>
+              <dt>r8 - r31 (24個)</dt>
+              <dd>
+このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに退避する。</dd>
+            </dl>
+            <p><tt class="docutils literal">RET</tt> 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。</p>
+            <dl class="docutils">
+              <dt>r0 - r7 (8個)</dt>
+              <dd>
+レジスタで値を返す場合は、返す値を格納する。</dd>
+              <dt>r8 - r31 (24個)</dt>
+              <dd>
+このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に戻すため、値を復旧する。</dd>
+            </dl>
+          </div>
+        </div>
+        <div class="section" id="scalable-pridicate">
+          <h2>scalable pridicateレジスタ</h2>
+          <table border="1" class="docutils">
+            <colgroup>
+              <col width="13%" />
+              <col width="87%" />
+            </colgroup>
+            <thead valign="bottom">
+              <tr>
+                <th class="head">
+Register</th>
+                <th class="head">
+Role in the procedure call standard</th>
+              </tr>
+            </thead>
+            <tbody valign="top">
+              <tr>
+                <td>
+p4 - r15</td>
+                <td>
+Callee-saved registers.</td>
+              </tr>
+              <tr>
+                <td>
+p0 - p3</td>
+                <td>
+Parameter/result registers</td>
+              </tr>
+            </tbody>
+          </table>
+          <p><tt class="docutils literal">BL</tt> 命令または <tt class="docutils literal">BLR</tt> 命令によってサブルーチンを呼び出すときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>p0 - p3 (4個)</dt>
+            <dd>
+サブルーチンの最初の最大4つの引数を格納する。</dd>
+          </dl>
+          <p>
+1つのサブルーチンを実行しているときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>p0 - p3 (4個)</dt>
+            <dd>
+サブルーチンの最初の4つの引数を取り出す。</dd>
+            <dt>p4 - p15 (12個)</dt>
+            <dd>
+このサブルーチンで作業用に更新する場合は、使用前に値をメモリなどに退避する。</dd>
+          </dl>
+          <p><tt class="docutils literal">RET</tt> 命令によってサブルーチンを終了するときは、レジスタを以下のようにする。</p>
+          <dl class="docutils">
+            <dt>p0 - p3 (4個)</dt>
+            <dd>
+レジスタで値を返す場合は、返す値を格納する。</dd>
+            <dt>p4 - r15 (12個)</dt>
+            <dd>
+このサブルーチンで作業用に更新した場合は、サブルーチン開始時の値に戻すため、値を復旧する。</dd>
+          </dl>
+        </div>
+        <div class="section" id="id5">
+          <h2>特殊レジスタ</h2>
+          <p>
+サブルーチンの呼び出し時と復帰時の特殊レジスタの状態は以下。</p>
+          <dl class="docutils">
+            <dt>NZCVレジスタ</dt>
+            <dd>
+不定。</dd>
+            <dt>FPSRレジスタ</dt>
+            <dd>
+不定。</dd>
+            <dt>FPCRレジスタ</dt>
+            <dd>
+exception-controlビット(8-12)、rounding modeビット(22-23)、そしてflush-to-zeroビット(24)は、特殊なサブルーチンからの復帰時に変更されている場合がある。それら以外のビットは未定義。</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
