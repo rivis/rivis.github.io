@@ -45,7 +45,7 @@ ARMv8-A, AArch64, A64を含むARMアーキテクチャの情報は、
 `ARM Compiler armasm User Guide (英語) <https://developer.arm.com/docs/100069/latest/>`_
   A32、T32、A64のアセンブリ言語の記述や各命令の説明と、その説明に
   必要な状態(AArch32, AArch64)、レジスタ、条件コードなどの説明がある。
-`Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語) <https://developer.arm.com/docs/ihi0055/c/>`_
+`Procedure Call Standard for the ARM 64-bit Architecture (AArch64) (英語) <https://developer.arm.com/docs/ihi0055/latest/>`_
   AArch64のABI (Application Binary Interface)での手続き呼び出しの
   規約の説明がある。手続き呼び出し時にレジスタをどのように使うかなど。
 
